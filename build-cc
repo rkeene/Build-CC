@@ -1,0 +1,295 @@
+#! /bin/bash
+
+# Root for cross-compilers (adjust as needed)
+CCROOT="${HOME}/root/cross-compilers"
+
+# Tool versions
+BINUTILS_VERS='2.21.1'
+PCC_VERS='1.0.0'
+GCC_VERS='4.6.1'
+GMP_VERS='5.0.2'
+MPFR_VERS='3.0.1'
+MPC_VERS='0.9'
+
+# Start of script
+## Initialize default values
+use_pcc=1
+
+## Parse arguments
+### Determine list of platforms
+idx=0
+for platform in platform/*-platform.tar.bz2; do
+	platform="$(basename "${platform}" | sed 's@-platform.tar.bz2$@@')"
+
+	platforms[${idx}]="${platform}"
+	idx=$[${idx} + 1]
+done
+
+if [ -z "$1" ]; then
+	set -- list
+fi
+
+if [ "$1" = "list" ]; then
+	echo 'Available Targets:'
+	for platform in "${platforms[@]}"; do
+		echo "  ${platform}"
+	done
+
+	exit 0
+elif [ "$1" = "clean" -o "$1" = "distclean" ]; then
+	true
+else
+	found='0'
+	for platform in "${platforms[@]}"; do
+		if [ "$1" = "${platform}" ]; then
+			found='1'
+
+			break
+		fi
+	done
+
+	if [ "${found}" = '0' ]; then
+		echo "Unknown target: $1, aborting." >&2
+
+		exit 1
+	fi
+fi
+
+## URLs
+### Binutils
+BINUTILS_URL="http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERS}.tar.gz"
+BINUTILS_TARBALL="src/binutils-${BINUTILS_VERS}.tar.gz"
+BINUTILS_DIR="binutils-${BINUTILS_VERS}"
+
+### PCC
+PCC_URL="http://pcc.ludd.ltu.se/ftp/pub/pcc-releases/pcc-${PCC_VERS}.tgz"
+PCC_TARBALL="src/pcc-${PCC_VERS}.tar.gz"
+PCC_DIR="pcc-${PCC_VERS}"
+
+PCC_LIBS_URL="http://pcc.ludd.ltu.se/ftp/pub/pcc-releases/pcc-libs-${PCC_VERS}.tgz"
+PCC_LIBS_TARBALL="src/pcc-libs-${PCC_VERS}.tar.gz"
+PCC_LIBS_DIR="pcc-libs-${PCC_VERS}"
+
+### GCC
+GCC_URL="http://mirrors-us.seosue.com/gcc/releases/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.gz"
+GCC_TARBALL="src/gcc-${GCC_VERS}.tar.gz"
+GCC_DIR="gcc-${GCC_VERS}"
+
+### GMP
+GMP_URL="http://ftp.gnu.org/gnu/gmp/gmp-${GMP_VERS}.tar.gz"
+GMP_TARBALL="src/gmp-${GMP_VERS}.tar.gz"
+GMP_DIR="gmp-${GMP_VERS}"
+
+### MPFR
+MPFR_URL="http://www.mpfr.org/mpfr-${MPFR_VERS}/mpfr-${MPFR_VERS}.tar.gz"
+MPFR_TARBALL="src/mpfr-${MPFR_VERS}.tar.gz"
+MPFR_DIR="mpfr-${MPFR_VERS}"
+
+### MPC
+MPC_URL="http://www.multiprecision.org/mpc/download/mpc-${MPC_VERS}.tar.gz"
+MPC_TARBALL="src/mpc-${MPC_VERS}.tar.gz"
+MPC_DIR="mpc-${MPC_VERS}"
+
+## Clean-up
+if [ "$1" = "clean" -o "$1" = "distclean" ]; then
+	rm -rf "${BINUTILS_DIR}" "${PCC_DIR}" "${PCC_LIBS_DIR}" "${GCC_DIR}" "${GMP_DIR}" "${MPFR_DIR}" "${MPC_DIR}"
+
+	for platform in "${platforms[@]}"; do
+		rm -rf "gcc-${platform}"
+		rm -rf "binutils-${platform}"
+	done
+
+	if [ "$1" = "clean" ]; then
+		exit 0
+	fi
+fi
+
+if [ "$1" = "distclean" ]; then
+	rm -f "${BINUTILS_TARBALL}" "${PCC_TARBALL}" "${PCC_LIBS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}"
+
+	rmdir src >/dev/null 2>/dev/null
+
+	exit 0
+fi
+
+## Tools
+MAKE="${MAKE:-make}"
+
+## Functions
+function download () {
+	local url
+	local file
+	local tmpfile
+
+	url="$1"
+	file="$2"
+	tmpfile="${file}.tmp"
+
+	if [ -s "${file}" ]; then
+		return 0
+	fi
+
+	mkdir -p "$(dirname "${tmpfile}")" 2>/dev/null >/dev/null
+
+	rm -f "${tmpfile}"
+	wget -O "${tmpfile}" "${url}" || return 1
+
+	mv "${tmpfile}" "${file}"
+
+	return 0
+}
+
+## Determine path for this cross-compiler
+CCNAME="$1"
+CCDIR="${CCROOT}/${CCNAME}"
+
+## Determine platform file tarball
+PLATFORM_TARBALL="$(pwd)/platform/${CCNAME}-platform.tar.bz2"
+
+## Install platform files
+(
+	mkdir -p "${CCDIR}/${CCNAME}"
+	cd "${CCDIR}/${CCNAME}" || exit 1
+
+	bzip2 -dc "${PLATFORM_TARBALL}" | tar -xf -
+)
+
+## Compile binutils for this platform if needed
+(
+	if [ -f "${CCDIR}/bin/${CCNAME}-as" ]; then
+		exit 0
+	fi
+
+	if [ ! -d "${BINUTILS_DIR}" ]; then
+		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}"
+
+		gzip -dc "${BINUTILS_TARBALL}" | tar -xf -
+	fi
+
+	rm -rf "binutils-${CCNAME}"
+	mkdir "binutils-${CCNAME}"
+	cd "binutils-${CCNAME}" || exit -1
+
+	"../${BINUTILS_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls
+
+	${MAKE} || exit 1
+
+	${MAKE} install || exit 1
+) || exit 1
+rm -rf "binutils-${CCNAME}"
+
+## Compile C compiler (PCC or GCC) if needed
+(
+	if [ "${use_pcc}" = "1" ]; then
+		exit 0
+	fi
+
+	if [ -f "${CCDIR}/bin/${CCNAME}-gcc" ]; then
+		exit 0
+	fi
+
+	if [ ! -d "${GCC_DIR}" ]; then
+		# Download sources required
+		download "${GCC_URL}" "${GCC_TARBALL}"
+		download "${GMP_URL}" "${GMP_TARBALL}"
+		download "${MPFR_URL}" "${MPFR_TARBALL}"
+		download "${MPC_URL}" "${MPC_TARBALL}"
+
+		# Extract sources
+		gzip -dc "${GCC_TARBALL}" | tar -xf -
+		gzip -dc "${GMP_TARBALL}" | tar -xf -
+		gzip -dc "${MPFR_TARBALL}" | tar -xf -
+		gzip -dc "${MPC_TARBALL}" | tar -xf -
+
+		# Arroung sources as needed
+		rm -rf "${GCC_DIR}/gmp"
+		rm -rf "${GCC_DIR}/mpfr"
+		rm -rf "${GCC_DIR}/mpc"
+
+		mv "${GMP_DIR}" "${GCC_DIR}/gmp"
+		mv "${MPFR_DIR}" "${GCC_DIR}/mpfr"
+		mv "${MPC_DIR}" "${GCC_DIR}/mpc"
+
+		# Apply patches
+		for patchfile in "$(pwd)/patches/${CCNAME}/gcc"/*.diff; do
+			if [ ! -f "${patchfile}" ]; then
+				continue
+			fi
+
+			(
+				echo " * Applying patch ${patchfile}"
+
+				cd "${GCC_DIR}" || exit 1
+
+				patch -p1 < "${patchfile}"
+			)
+		done
+	fi
+
+	rm -rf "gcc-${CCNAME}"
+	mkdir "gcc-${CCNAME}"
+	cd "gcc-${CCNAME}" || exit -1
+
+	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls
+
+	${MAKE} || exit 1
+
+	${MAKE} install || exit 1
+) || exit 1
+rm -rf "gcc-${CCNAME}"
+
+(
+	if [ "${use_pcc}" != "1" ]; then
+		exit 0
+	fi
+
+	if [ -f "${CCDIR}/bin/${CCNAME}-pcc" ]; then
+		exit 0
+	fi
+
+	download "${PCC_URL}" "${PCC_TARBALL}"
+
+	rm -rf "${PCC_DIR}"
+	gzip -dc "${PCC_TARBALL}" | tar -xf -
+
+	cd "${PCC_DIR}" || exit 1
+
+	./configure --target="${CCNAME}" --prefix="${CCDIR}" --enable-tls
+
+	${MAKE} || exit 1
+
+	${MAKE} install || exit 1
+) || exit 1
+
+(
+	if [ "${use_pcc}" != "1" ]; then
+		exit 0
+	fi
+
+	if find "${CCDIR}/lib/pcc/${CCNAME}" -name libpcc.a -type f | grep libpcc >/dev/null; then
+		exit 0
+	fi
+
+	PATH="${PATH}:${CCDIR}/bin"
+	CC="${CCNAME}-pcc"
+	AR="${CCNAME}-ar"
+	STRIP="${CCNAME}-strip"
+	RANLIB="${CCNAME}-ranlib"
+	export PATH CC AR STRIP RANLIB
+
+	download "${PCC_LIBS_URL}" "${PCC_LIBS_TARBALL}"
+
+	rm -rf "${PCC_LIBS_DIR}"
+	gzip -dc "${PCC_LIBS_TARBALL}" | tar -xf -
+
+	cd "${PCC_LIBS_DIR}" || exit 1
+
+	./configure --host="${CCNAME}" --prefix="${CCDIR}"
+
+	${MAKE} || exit 1
+
+	${MAKE} install || exit 1
+) || exit 1
+
+# Clean up
+exit 0
