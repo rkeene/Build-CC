@@ -1,0 +1,13 @@
+--- gcc-4.6.1/gcc/config/sparc/gmon-sol2.c	2010-10-11 11:43:56.000000000 -0500
++++ gcc-4.6.1-fixgmon/gcc/config/sparc/gmon-sol2.c	2011-07-26 00:40:38.000000000 -0500
+@@ -35,6 +35,10 @@
+ #include "tconfig.h"
+ #include "tsystem.h"
+ #include <fcntl.h> /* for creat() */
++#include <limits.h> /* for PATH_MAX */
++#ifndef PATH_MAX
++#define PATH_MAX 1024
++#endif
+ 
+ #if 0
+ #include "sparc/gmon.h"
