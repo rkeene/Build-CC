@@ -90,15 +90,25 @@ case "${PLATFORM}" in
 			if [ -d '/usr/lib/pa20_64' ]; then
 				cp /usr/lib/pa20_64/*.o "${PLATFORM_LIB}"
 				cp /usr/ccs/lib/pa20_64/*.o "${PLATFORM_LIB}"
+
 				cp /usr/lib/pa20_64/lib*.[0-9] "${PLATFORM_LIB}"
 				cp /usr/lib/pa20_64/lib*.sl "${PLATFORM_LIB}"
 				cp /usr/lib/pa20_64/*.a "${PLATFORM_LIB}"
+
+				cp /usr/lib/X11R?/pa20_64/lib*.[0-9] "${PLATFORM_LIB}"
+				cp /usr/lib/X11R?/pa20_64/lib*.sl "${PLATFORM_LIB}"
+				cp /usr/lib/X11R?/pa20_64/*.a "${PLATFORM_LIB}"
 			fi
 		else
 			cp /usr/lib/*.o "${PLATFORM_LIB}"
+
 			cp /usr/lib/lib*.[0-9] "${PLATFORM_LIB}"
 			cp /usr/lib/lib*.sl "${PLATFORM_LIB}"
 			cp /usr/lib/*.a "${PLATFORM_LIB}"
+
+			cp /usr/lib/X11R?/lib*.[0-9] "${PLATFORM_LIB}"
+			cp /usr/lib/X11R?/lib*.sl "${PLATFORM_LIB}"
+			cp /usr/lib/X11R?/*.a "${PLATFORM_LIB}"
 		fi
 
 		# Headers
