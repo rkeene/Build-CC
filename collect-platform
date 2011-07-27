@@ -23,9 +23,9 @@ if [ -z "${PLATFORM}" ]; then
 			esac
 
 			if isainfo 2>/dev/null | grep sparc >/dev/null; then
-				PLATFORM="sparc64-unknown-solaris${SOLARIS_VERSION}"
+				PLATFORM="sparc-sun-solaris${SOLARIS_VERSION}"
 			elif isainfo 2>/dev/null | grep i386 >/dev/null; then
-				PLATFORM="x86_64-unknown-solaris${SOLARIS_VERSION}"
+				PLATFORM="i386-pc-solaris${SOLARIS_VERSION}"
 			fi
 			;;
 		HP-UX)
@@ -33,7 +33,7 @@ if [ -z "${PLATFORM}" ]; then
 
 			if hp-pa 2>/dev/null >/dev/null; then
 				if [ -d '/usr/lib/pa20_64' ]; then
-					PLATFORM="hppa64-hp-hpux${HPUX_VERSION}"
+					PLATFORM="hppa2.0w-hp-hpux${HPUX_VERSION}"
 				else
 					PLATFORM="hppa1.1-hp-hpux${HPUX_VERSION}"
 				fi

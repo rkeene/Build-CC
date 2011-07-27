@@ -145,7 +145,10 @@ CCDIR="${CCROOT}/${CCNAME}"
 
 ## Determine attributes for this compiler
 case "${CCNAME}" in
-	sparc64-unknown-solaris2.10)
+	sparc64-*)
+		use_pcc='0'
+		;;
+	i386-pc-solaris2.10)
 		use_pcc='0'
 		;;
 esac
@@ -244,7 +247,7 @@ rm -rf "binutils-${CCNAME}"
 	cd "gcc-${CCNAME}" || exit -1
 
 	# build GCC
-	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-gnu-ld --without-headers --enable-languages='c,c++'
+	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-gnu-ld --with-gnu-as --without-headers --enable-languages='c,c++'
 
 	${MAKE} all-gcc || exit 1
 	${MAKE} install-gcc || exit 1
