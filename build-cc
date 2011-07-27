@@ -145,8 +145,13 @@ CCDIR="${CCROOT}/${CCNAME}"
 
 ## Determine attributes for this compiler
 case "${CCNAME}" in
-	sparc64-*)
+	sparc64-*|sparc-*)
 		use_pcc='0'
+		;;
+	hppa64-*|hppa1*-)
+		use_pcc='0'
+
+		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --disable-libquadmath"
 		;;
 esac
 
@@ -252,7 +257,7 @@ rm -rf "binutils-${CCNAME}"
 	cd "gcc-${CCNAME}" || exit -1
 
 	# build GCC
-	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++'
+	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 	${MAKE} || exit 1
 	${MAKE} install || exit 1
