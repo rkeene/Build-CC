@@ -95,9 +95,9 @@ case "${PLATFORM}" in
 				cp /usr/lib/pa20_64/lib*.sl "${PLATFORM_LIB}"
 				cp /usr/lib/pa20_64/*.a "${PLATFORM_LIB}"
 
-				cp /usr/lib/X11R?/pa20_64/lib*.[0-9] "${PLATFORM_LIB}"
-				cp /usr/lib/X11R?/pa20_64/lib*.sl "${PLATFORM_LIB}"
-				cp /usr/lib/X11R?/pa20_64/*.a "${PLATFORM_LIB}"
+				cp /usr/lib/X11R6/pa20_64/lib*.[0-9] "${PLATFORM_LIB}"
+				cp /usr/lib/X11R6/pa20_64/lib*.sl "${PLATFORM_LIB}"
+				cp /usr/lib/X11R6/pa20_64/*.a "${PLATFORM_LIB}"
 			fi
 		else
 			cp /usr/lib/*.o "${PLATFORM_LIB}"
@@ -106,9 +106,9 @@ case "${PLATFORM}" in
 			cp /usr/lib/lib*.sl "${PLATFORM_LIB}"
 			cp /usr/lib/*.a "${PLATFORM_LIB}"
 
-			cp /usr/lib/X11R?/lib*.[0-9] "${PLATFORM_LIB}"
-			cp /usr/lib/X11R?/lib*.sl "${PLATFORM_LIB}"
-			cp /usr/lib/X11R?/*.a "${PLATFORM_LIB}"
+			cp /usr/lib/X11R6/lib*.[0-9] "${PLATFORM_LIB}"
+			cp /usr/lib/X11R6/lib*.sl "${PLATFORM_LIB}"
+			cp /usr/lib/X11R6/*.a "${PLATFORM_LIB}"
 		fi
 
 		# Headers
