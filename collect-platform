@@ -130,7 +130,19 @@ case "${PLATFORM}" in
 		) | while read file; do
 			cat "/usr/include/${file}" > "${PLATFORM_INCLUDE}/${file}"
 		done
+	*)
+		echo 'WARNING: Unknown system type, using generic collection' >&2
 
+		# Libraries
+		cp /usr/lib/*.o "${PLATFORM_LIB}"
+		cp /usr/lib/lib*.so* "${PLATFORM_LIB}"
+		cp /usr/lib/lib*.a "${PLATFORM_LIB}"
+		cp /lib/*.o "${PLATFORM_LIB}"
+		cp /lib/lib*.so* "${PLATFORM_LIB}"
+		cp /lib/lib*.a "${PLATFORM_LIB}"
+
+		# Headers
+		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
 		;;
 esac
 
