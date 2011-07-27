@@ -143,16 +143,15 @@ function download () {
 CCNAME="$1"
 CCDIR="${CCROOT}/${CCNAME}"
 
+## Determine attributes for this compiler
+case "${CCNAME}" in
+	sparc64-unknown-solaris2.10)
+		use_pcc='0'
+		;;
+esac
+
 ## Determine platform file tarball
 PLATFORM_TARBALL="$(pwd)/platform/${CCNAME}-platform.tar.bz2"
-
-## Install platform files
-(
-	mkdir -p "${CCDIR}/${CCNAME}"
-	cd "${CCDIR}/${CCNAME}" || exit 1
-
-	bzip2 -dc "${PLATFORM_TARBALL}" | tar -xf -
-)
 
 ## Compile binutils for this platform if needed
 (
@@ -180,12 +179,10 @@ rm -rf "binutils-${CCNAME}"
 
 ## Compile C compiler (PCC or GCC) if needed
 (
-	if [ "${use_pcc}" = "1" ]; then
-		exit 0
-	fi
-
 	if [ -f "${CCDIR}/bin/${CCNAME}-gcc" ]; then
-		exit 0
+		if find "${CCDIR}/lib/gcc" -type f -name 'libgcc.a' | grep libgcc >/dev/null; then
+			exit 0
+		fi
 	fi
 
 	if [ ! -d "${GCC_DIR}" ]; then
@@ -209,35 +206,72 @@ rm -rf "binutils-${CCNAME}"
 		mv "${GMP_DIR}" "${GCC_DIR}/gmp"
 		mv "${MPFR_DIR}" "${GCC_DIR}/mpfr"
 		mv "${MPC_DIR}" "${GCC_DIR}/mpc"
-
-		# Apply patches
-		for patchfile in "$(pwd)/patches/${CCNAME}/gcc"/*.diff; do
-			if [ ! -f "${patchfile}" ]; then
-				continue
-			fi
-
-			(
-				echo " * Applying patch ${patchfile}"
-
-				cd "${GCC_DIR}" || exit 1
-
-				patch -p1 < "${patchfile}"
-			)
-		done
 	fi
 
+	# Apply patches
+	## Reverse existing patches
+	cat "${GCC_DIR}/BUILD-CC_PATCHES_APPLIED" 2>/dev/null | while read patchfile; do
+		(
+			cd "${GCC_DIR}" || exit 1
+
+			echo " * Un-applying patch ${patchfile}"
+
+			patch --reverse -p1 < "${patchfile}"
+		)
+	done
+	rm -f "${GCC_DIR}/BUILD-CC_PATCHES_APPLIED"
+
+	## Apply host-specific patches
+	for patchfile in "$(pwd)/patches/${CCNAME}/gcc"/*.diff; do
+		if [ ! -f "${patchfile}" ]; then
+			continue
+		fi
+
+		(
+			echo " * Applying patch ${patchfile}"
+
+			cd "${GCC_DIR}" || exit 1
+
+			patch -p1 < "${patchfile}" || exit 1
+
+			echo "${patchfile}" >> 'BUILD-CC_PATCHES_APPLIED'
+		) || exit 1
+	done
+
+	# Create build directory
 	rm -rf "gcc-${CCNAME}"
 	mkdir "gcc-${CCNAME}"
 	cd "gcc-${CCNAME}" || exit -1
 
-	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls
+	# build GCC
+	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-gnu-ld --without-headers --enable-languages='c,c++'
 
-	${MAKE} || exit 1
+	${MAKE} all-gcc || exit 1
+	${MAKE} install-gcc || exit 1
+) || exit 1
 
-	${MAKE} install || exit 1
+### Install platform files (needed for libgcc)
+(
+	mkdir -p "${CCDIR}/${CCNAME}"
+	cd "${CCDIR}/${CCNAME}" || exit 1
+
+	bzip2 -dc "${PLATFORM_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
+)
+
+### Install libgcc
+(
+	if find "${CCDIR}/lib/gcc" -type f -name 'libgcc.a' | grep libgcc >/dev/null; then
+		exit 0
+	fi
+
+	cd "gcc-${CCNAME}" || exit -1
+
+	${MAKE} all-target-libgcc
+	${MAKE} install-target-libgcc
 ) || exit 1
 rm -rf "gcc-${CCNAME}"
 
+### Install PCC
 (
 	if [ "${use_pcc}" != "1" ]; then
 		exit 0

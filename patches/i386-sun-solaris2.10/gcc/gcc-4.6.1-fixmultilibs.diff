@@ -1,0 +1,15 @@
+--- gcc-4.6.1/gcc/config/i386/t-sol2-10	2009-04-21 14:03:23.000000000 -0500
++++ gcc-4.6.1-fixmultilibs/gcc/config/i386/t-sol2-10	2011-07-26 08:53:16.000000000 -0500
+@@ -16,9 +16,9 @@
+ # along with GCC; see the file COPYING3.  If not see
+ # <http://www.gnu.org/licenses/>.
+ 
+-MULTILIB_OPTIONS = m32/m64
+-MULTILIB_DIRNAMES = 32 amd64
+-MULTILIB_OSDIRNAMES = . amd64
++MULTILIB_OPTIONS = m32
++MULTILIB_DIRNAMES = 32
++MULTILIB_OSDIRNAMES = .
+ 
+ LIBGCC = stmp-multilib
+ INSTALL_LIBGCC = install-multilib

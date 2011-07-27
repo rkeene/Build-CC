@@ -1,0 +1,169 @@
+#! /bin/bash
+
+# 1. Determine platform
+PLATFORM=''
+if [ -n "$1" ]; then
+	PLATFORM="$1"
+
+	if [ "${PLATFORM}" = "auto" ]; then
+		PLATFORM=''
+	fi
+fi
+
+if [ -z "${PLATFORM}" ]; then
+	case "$(uname -s)" in
+		SunOS)
+			case "$(uname -r)" in
+				5.*)
+					SOLARIS_VERSION="2.$(uname -r | cut -f 2 -d '.')"
+					;;
+				*)
+					SOLARIS_VERSION="1.$(uname -r | cut -f 2 -d '.')"
+					;;
+			esac
+
+			if isainfo 2>/dev/null | grep sparc >/dev/null; then
+				PLATFORM="sparc64-unknown-solaris${SOLARIS_VERSION}"
+			elif isainfo 2>/dev/null | grep i386 >/dev/null; then
+				PLATFORM="x86_64-unknown-solaris${SOLARIS_VERSION}"
+			fi
+			;;
+		HP-UX)
+			HPUX_VERSION="$(uname -r | sed 's@^[A-Z][A-Z]*\.@@')"
+
+			if hp-pa 2>/dev/null >/dev/null; then
+				if [ -d '/usr/lib/pa20_64' ]; then
+					PLATFORM="hppa64-hp-hpux${HPUX_VERSION}"
+				else
+					PLATFORM="hppa1.1-hp-hpux${HPUX_VERSION}"
+				fi
+			else
+				PLATFORM="ia64-hp-hpux${HPUX_VERSION}"
+			fi
+			;;
+	esac
+fi
+
+if [ -z "${PLATFORM}" ]; then
+	echo 'Unable to guess platform.  Try specifying the platform.' >&2
+
+	exit 1
+fi
+
+# 2. Create directory to hold system files
+PLATFORM_ROOT="/var/tmp/platform-$$${RANDOM}${RANDOM}${RANDOM}"
+PLATFORM_INCLUDE="${PLATFORM_ROOT}/include"
+PLATFORM_LIB="${PLATFORM_ROOT}/lib"
+
+rm -rf "${PLATFORM_ROOT}"
+mkdir -p "${PLATFORM_ROOT}" "${PLATFORM_LIB}" "${PLATFORM_INCLUDE}"
+
+# 3. Collect header files
+case "${PLATFORM}" in
+	*-solaris2*)
+		# Libraries
+		mkdir "${PLATFORM_LIB}/64"
+		cp /usr/lib/64/*.o "${PLATFORM_LIB}/64/"
+		cp /lib/64/lib*.so* "${PLATFORM_LIB}/64/"
+		cp /lib/64/lib*.a "${PLATFORM_LIB}/64/"
+		cp /usr/lib/64/lib*.so* "${PLATFORM_LIB}/64/"
+		cp /usr/lib/64/lib*.a "${PLATFORM_LIB}/64/"
+		if echo "${PLATFORM}" | grep '^sparc' >/dev/null; then
+			ln -s '64' "${PLATFORM_LIB}/sparcv9"
+		else
+			ln -s '64' "${PLATFORM_LIB}/amd64"
+		fi
+
+		cp /usr/lib/*.o "${PLATFORM_LIB}/"
+		cp /lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /lib/lib*.a "${PLATFORM_LIB}/"
+		cp /usr/lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /usr/lib/lib*.a "${PLATFORM_LIB}/"
+		ln -s '.' "${PLATFORM_LIB}/32"
+
+		# Headers
+		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+		;;
+	*-hpux11*)
+		# Libraries
+		if [ -d '/usr/lib/pa20_64' ]; then
+			mkdir "${PLATFORM_LIB}/pa20_64"
+
+			cp /usr/lib/pa20_64/*.o "${PLATFORM_LIB}/pa20_64/"
+			cp /usr/ccs/lib/pa20_64/*.o "${PLATFORM_LIB}/pa20_64/"
+			cp /usr/lib/pa20_64/lib*.[a0-9] "${PLATFORM_LIB}/pa20_64/"
+			cp /usr/lib/pa20_64/lib*.sl "${PLATFORM_LIB}/pa20_64/"
+		fi
+
+		cp /usr/lib/*.o "${PLATFORM_LIB}"
+		cp /usr/lib/lib*.[a0-9] "${PLATFORM_LIB}"
+		cp /usr/lib/lib*.sl "${PLATFORM_LIB}"
+
+		# Headers
+		(
+			cd /usr/include || exit 1
+
+			find . -type d
+		) | while read dir; do
+			mkdir "${PLATFORM_INCLUDE}/${dir}" >/dev/null 2>/dev/null
+		done
+
+		(
+			cd /usr/include || exit 1
+
+			find . -type f
+		) | while read file; do
+			cat "/usr/include/${file}" > "${PLATFORM_INCLUDE}/${file}"
+		done
+
+		;;
+esac
+
+# 4. Create archive
+## Resolve symlinks
+find "${PLATFORM_ROOT}" -type l | while read link; do
+	if [ -d "${link}" ]; then
+		continue
+	fi
+
+	cat "${link}" > "${link}.new"
+	rm "${link}"
+	mv "${link}.new" "${link}"
+done
+
+## Re-create safe symlinks
+(
+	cd "${PLATFORM_ROOT}" || exit 1
+
+	prevhash=''; find . -type f | xargs openssl sha1  | sed 's@^SHA1(\(.*\))= \([0-9a-f][0-9a-f]*\)$@\2 \1@' | sort | while read hash file; do
+		file="$(echo "${file}" | sed 's@^\./@@')"
+
+		if [ "${hash}" = "${prevhash}" ]; then
+			numslashes="$(echo "${file}" | sed 's@[^/]@@g' | wc -c | awk '{ print $1 - 1 }')"
+			prefix=''
+			for ((idx = 0; $idx < $numslashes; idx++)); do
+				prefix="../${prefix}"
+			done
+
+			rm -f "${file}"
+			ln -s "${prefix}${prevfile}" "${file}"
+
+			continue
+		fi
+
+		prevhash="${hash}"
+		prevfile="${file}"
+	done
+)
+
+## Create archive
+(
+	cd "${PLATFORM_ROOT}" || exit 1
+
+	tar -cf - *
+) | bzip2 -9c > "${PLATFORM}-platform.tar.bz2"
+
+## Remove temporary files
+rm -rf "${PLATFORM_ROOT}"
+
+exit 0
