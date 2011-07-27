@@ -119,7 +119,7 @@ case "${PLATFORM}" in
 				continue
 			fi
 
-			cp -R "${link}" "${PLATFORM_INCLUDE}/$(dirname "${link}")/"
+			cp -R "/usr/include/${link}" "${PLATFORM_INCLUDE}/$(dirname "${link}")/"
 		done
 
 		## Create all files
