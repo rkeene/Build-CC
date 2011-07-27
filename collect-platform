@@ -33,7 +33,7 @@ if [ -z "${PLATFORM}" ]; then
 
 			if hp-pa 2>/dev/null >/dev/null; then
 				if [ -d '/usr/lib/pa20_64' ]; then
-					PLATFORM="hppa2.0w-hp-hpux${HPUX_VERSION}"
+					PLATFORM="hppa64-hp-hpux${HPUX_VERSION}"
 				else
 					PLATFORM="hppa1.1-hp-hpux${HPUX_VERSION}"
 				fi
@@ -115,11 +115,11 @@ case "${PLATFORM}" in
 
 			find . -type l
 		) | while read link; do
-			if [ ! -d "${link}" ]; then
+			if [ ! -d "/usr/include/${link}" ]; then
 				continue
 			fi
 
-			cp -R "/usr/include/${link}" "${PLATFORM_INCLUDE}/$(dirname "${link}")/"
+			cp -R "/usr/include/${link}" "${PLATFORM_INCLUDE}/${link}"
 		done
 
 		## Create all files
