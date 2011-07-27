@@ -1,0 +1,10 @@
+--- gcc-4.6.1/gcc/config/sparc/t-sol2-64	2011-05-22 15:03:43.000000000 -0500
++++ gcc-4.6.1-fixmultilibs/gcc/config/sparc/t-sol2-64	2011-07-26 20:02:43.000000000 -0500
+@@ -1,5 +1,5 @@
+-MULTILIB_OPTIONS = m32/m64
+-MULTILIB_DIRNAMES = sparcv8plus sparcv9
++MULTILIB_OPTIONS = m64
++MULTILIB_DIRNAMES = sparcv9
+ MULTILIB_MATCHES =
+ MULTILIB_OSDIRNAMES = . sparcv9
+ 
