@@ -111,6 +111,25 @@ case "${PLATFORM}" in
 			cp /usr/lib/X11R6/*.a "${PLATFORM_LIB}"
 		fi
 
+		## Create lib symlinks as needed
+		(
+			cd "${PLATFORM_LIB}" || exit 1
+
+			for libfile in *.[0-9]; do
+				if echo "${libfile}" | grep '\.sl' >/dev/null; then
+					continue
+				fi
+
+				shlib="$(echo "${libfile}" | sed 's@\.[0-9]$@@').sl"
+				if [ -f "${shlib}" ]; then
+					continue
+				fi
+
+				rm -f "${shlib}"
+				ln -s "${libfile}" "${shlib}"
+			done
+		)
+
 		# Headers
 		## Create all directories
 		(
