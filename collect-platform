@@ -86,18 +86,20 @@ case "${PLATFORM}" in
 		;;
 	*-hpux11*)
 		# Libraries
-		if [ -d '/usr/lib/pa20_64' ]; then
-			mkdir "${PLATFORM_LIB}/pa20_64"
-
-			cp /usr/lib/pa20_64/*.o "${PLATFORM_LIB}/pa20_64/"
-			cp /usr/ccs/lib/pa20_64/*.o "${PLATFORM_LIB}/pa20_64/"
-			cp /usr/lib/pa20_64/lib*.[a0-9] "${PLATFORM_LIB}/pa20_64/"
-			cp /usr/lib/pa20_64/lib*.sl "${PLATFORM_LIB}/pa20_64/"
+		if echo "${PLATFORM}" | grep '^hppa64-' >/dev/null; then
+			if [ -d '/usr/lib/pa20_64' ]; then
+				cp /usr/lib/pa20_64/*.o "${PLATFORM_LIB}"
+				cp /usr/ccs/lib/pa20_64/*.o "${PLATFORM_LIB}"
+				cp /usr/lib/pa20_64/lib*.[0-9] "${PLATFORM_LIB}"
+				cp /usr/lib/pa20_64/lib*.sl "${PLATFORM_LIB}"
+				cp /usr/lib/pa20_64/*.a "${PLATFORM_LIB}"
+			fi
+		else
+			cp /usr/lib/*.o "${PLATFORM_LIB}"
+			cp /usr/lib/lib*.[0-9] "${PLATFORM_LIB}"
+			cp /usr/lib/lib*.sl "${PLATFORM_LIB}"
+			cp /usr/lib/*.a "${PLATFORM_LIB}"
 		fi
-
-		cp /usr/lib/*.o "${PLATFORM_LIB}"
-		cp /usr/lib/lib*.[a0-9] "${PLATFORM_LIB}"
-		cp /usr/lib/lib*.sl "${PLATFORM_LIB}"
 
 		# Headers
 		## Create all directories
@@ -130,6 +132,7 @@ case "${PLATFORM}" in
 		) | while read file; do
 			cat "/usr/include/${file}" > "${PLATFORM_INCLUDE}/${file}"
 		done
+		;;
 	*)
 		echo 'WARNING: Unknown system type, using generic collection' >&2
 
