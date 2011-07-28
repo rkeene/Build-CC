@@ -290,19 +290,21 @@ rm -rf "binutils-${CCNAME}"
 )
 retval="$?"
 
-test "${retval}" = "0" && (
-	# Build GCC without shared object support
-	## Create build directory
-	rm -rf "gcc-${CCNAME}"
-	mkdir "gcc-${CCNAME}"
-	cd "gcc-${CCNAME}" || exit -1
+if [ "${retval}" = "0" ]; then
+	(
+		# Build GCC without shared object support
+		## Create build directory
+		rm -rf "gcc-${CCNAME}"
+		mkdir "gcc-${CCNAME}"
+		cd "gcc-${CCNAME}" || exit -1
 
-	## Build GCC
-	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' --disable-shared ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+		## Build GCC
+		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' --disable-shared ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
-	${MAKE} || exit 1
-	${MAKE} install || exit 1
-) || exit 1
+		${MAKE} || exit 1
+		${MAKE} install || exit 1
+	) || exit 1
+fi
 rm -rf "gcc-${CCNAME}"
 
 ### Install PCC
@@ -322,11 +324,14 @@ rm -rf "gcc-${CCNAME}"
 
 	cd "${PCC_DIR}" || exit 1
 
+	### PCC does not work with parallel make
+	MAKE="${MAKE_SINGLE}"
+
 	./configure --target="${CCNAME}" --prefix="${CCDIR}" --enable-tls
 
-	${MAKE_SINGLE} || exit 1
+	${MAKE} || exit 1
 
-	${MAKE_SINGLE} install || exit 1
+	${MAKE} install || exit 1
 ) || exit 1
 
 (
@@ -352,11 +357,14 @@ rm -rf "gcc-${CCNAME}"
 
 	cd "${PCC_LIBS_DIR}" || exit 1
 
+	### PCC does not work with parallel make
+	MAKE="${MAKE_SINGLE}"
+
 	./configure --host="${CCNAME}" --prefix="${CCDIR}"
 
-	${MAKE_SINGLE} || exit 1
+	${MAKE} || exit 1
 
-	${MAKE_SINGLE} install || exit 1
+	${MAKE} install || exit 1
 ) || exit 1
 
 # Clean up
