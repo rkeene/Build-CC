@@ -219,7 +219,7 @@ rm -rf "binutils-${CCNAME}"
 (
 	if [ -f "${CCDIR}/bin/${CCNAME}-gcc" ]; then
 		if find "${CCDIR}/lib/gcc" -type f -name 'libgcc.a' | grep libgcc >/dev/null; then
-			exit 0
+			exit 2
 		fi
 	fi
 
@@ -287,9 +287,10 @@ rm -rf "binutils-${CCNAME}"
 
 	${MAKE} || exit 1
 	${MAKE} install || exit 1
-) || exit 1
+)
+retval="$?"
 
-(
+test "${retval}" = "0" && (
 	# Build GCC without shared object support
 	## Create build directory
 	rm -rf "gcc-${CCNAME}"
