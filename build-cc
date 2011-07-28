@@ -1,7 +1,25 @@
 #! /bin/bash
 
-# Root for cross-compilers (adjust as needed)
+# Start in the same working directory as our script
+OURSCP="$(which "$0" 2>/dev/null)"
+if [ -f "${OURSCP}" ]; then
+	cd "$(dirname "${OURSCP}")" || exit 1
+fi
+
+# Load configuration
+## Provide defaults
+### Root for cross-compiler toolchains
 CCROOT="${HOME}/root/cross-compilers"
+
+### Path to platform files
+if [ -z "${BUILD_CC_PLATFORMDIR}" ]; then
+	BUILD_CC_PLATFORMDIR="$(pwd)/platform"
+fi
+
+## Load configuration file
+if [ -f "build-cc.conf" ]; then
+	. "build-cc.conf"
+fi
 
 # Tool versions
 BINUTILS_VERS='2.21.1'
@@ -18,7 +36,7 @@ use_pcc=1
 ## Parse arguments
 ### Determine list of platforms
 idx=0
-for platform in platform/*-platform.tar.bz2; do
+for platform in "${BUILD_CC_PLATFORMDIR}"/*-platform.tar.bz2; do
 	platform="$(basename "${platform}" | sed 's@-platform.tar.bz2$@@')"
 
 	platforms[${idx}]="${platform}"
@@ -114,6 +132,8 @@ fi
 
 ## Tools
 MAKE="${MAKE:-make}"
+MAKE_SINGLE="$(echo " ${MAKE} " | sed 's@ -j *[0-9][0-9]* @ @g;s@^  *@@g;s@  *$@@g')"
+export MAKE MAKE_SINGLE
 
 ## Functions
 function download () {
@@ -156,8 +176,8 @@ case "${CCNAME}" in
 esac
 
 ## Determine platform file tarball
-PLATFORM_TARBALL="$(pwd)/platform/${CCNAME}-platform.tar.bz2"
-ADDONS_TARBALL="$(pwd)/platform/${CCNAME}-addons.tar.bz2"
+PLATFORM_TARBALL="${BUILD_CC_PLATFORMDIR}/${CCNAME}-platform.tar.bz2"
+ADDONS_TARBALL="${BUILD_CC_PLATFORMDIR}/platform/${CCNAME}-addons.tar.bz2"
 
 ### Install platform files (needed for libgcc)
 (
@@ -256,13 +276,28 @@ rm -rf "binutils-${CCNAME}"
 		) || exit 1
 	done
 
-	# Create build directory
+	# Build GCC with shared object support
+	## Create build directory
 	rm -rf "gcc-${CCNAME}"
 	mkdir "gcc-${CCNAME}"
 	cd "gcc-${CCNAME}" || exit -1
 
-	# build GCC
+	## Build GCC
 	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+
+	${MAKE} || exit 1
+	${MAKE} install || exit 1
+) || exit 1
+
+(
+	# Build GCC without shared object support
+	## Create build directory
+	rm -rf "gcc-${CCNAME}"
+	mkdir "gcc-${CCNAME}"
+	cd "gcc-${CCNAME}" || exit -1
+
+	## Build GCC
+	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' --disable-shared ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 	${MAKE} || exit 1
 	${MAKE} install || exit 1
@@ -288,9 +323,9 @@ rm -rf "gcc-${CCNAME}"
 
 	./configure --target="${CCNAME}" --prefix="${CCDIR}" --enable-tls
 
-	${MAKE} || exit 1
+	${MAKE_SINGLE} || exit 1
 
-	${MAKE} install || exit 1
+	${MAKE_SINGLE} install || exit 1
 ) || exit 1
 
 (
@@ -318,9 +353,9 @@ rm -rf "gcc-${CCNAME}"
 
 	./configure --host="${CCNAME}" --prefix="${CCDIR}"
 
-	${MAKE} || exit 1
+	${MAKE_SINGLE} || exit 1
 
-	${MAKE} install || exit 1
+	${MAKE_SINGLE} install || exit 1
 ) || exit 1
 
 # Clean up

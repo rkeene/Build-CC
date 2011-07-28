@@ -6,8 +6,9 @@ all: $(BUILD_CC_RELEASE)
 build-cc-r%.tar.gz: build-cc collect-platform patches
 	rm -rf __tmp__
 	mkdir __tmp__
-	mkdir __tmp__/`echo "$@" | sed 's@\.tar\.gz$$@@'`
+	mkdir -p __tmp__/$(shell echo "$@" | sed 's@\.tar\.gz$$@@')/platform
 	cp -rp build-cc collect-platform patches __tmp__/*/
+	cp platform/*-addons.tar.bz2 __tmp__/*/platform/
 	cd __tmp__; tar --exclude .svn -zcf "../$@" *
 	rm -rf __tmp__
 
