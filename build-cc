@@ -157,6 +157,7 @@ esac
 
 ## Determine platform file tarball
 PLATFORM_TARBALL="$(pwd)/platform/${CCNAME}-platform.tar.bz2"
+ADDONS_TARBALL="$(pwd)/platform/${CCNAME}-addons.tar.bz2"
 
 ### Install platform files (needed for libgcc)
 (
@@ -164,6 +165,10 @@ PLATFORM_TARBALL="$(pwd)/platform/${CCNAME}-platform.tar.bz2"
 	cd "${CCDIR}/${CCNAME}" || exit 1
 
 	bzip2 -dc "${PLATFORM_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
+
+	if [ -f "${ADDONS_TARBALL}" ]; then
+		bzip2 -dc "${ADDONS_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
+	fi
 )
 
 ## Compile binutils for this platform if needed
