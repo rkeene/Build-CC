@@ -261,7 +261,7 @@ fi
 				exit 2
 			else
 				#### Determine if a stage2 compiler has been built
-				if find "${CCDIR}/lib/gcc" -type f -name 'libgcc_s.*' | grep libgcc_s >/dev/null; then
+				if find "${CCDIR}" -type f -name 'libgcc_s.*' | grep libgcc_s >/dev/null; then
 					exit 2
 				fi
 			fi

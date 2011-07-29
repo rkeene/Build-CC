@@ -10,6 +10,7 @@ GLIBC_DIR="glibc-${GLIBC_VERS}"
 CCNAME="$1"
 CCDIR="$2"
 PREFIX="$3"
+STAGE="$4"
 
 # Clean
 if [ "$1" = "distclean" ]; then
@@ -27,6 +28,11 @@ fi
 
 # Only build glibc for linux-gnu platforms
 if ! echo "${CCNAME}" | grep -- '-linux-gnu' >/dev/null; then
+	exit 0
+fi
+
+# Only build the first time around
+if [ "${STAGE}" != "stage1" ]; then
 	exit 0
 fi
 

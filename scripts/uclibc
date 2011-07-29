@@ -10,6 +10,7 @@ UCLIBC_DIR="uClibc-${UCLIBC_VERS}"
 CCNAME="$1"
 CCDIR="$2"
 PREFIX="$3"
+STAGE="$4"
 
 # Clean
 if [ "$1" = "distclean" ]; then
@@ -31,6 +32,11 @@ fi
 
 # Skip building if we are already installed
 if [ -f "${PREFIX}/lib/ld-uClibc.so.0" ]; then
+	exit 0
+fi
+
+# Only build the first time around
+if [ "${STAGE}" != "stage1" ]; then
 	exit 0
 fi
 
@@ -64,6 +70,8 @@ bzip2 -dc "${UCLIBC_TARBALL}" | tar -xf -
 s@^HAS_NO_THREADS=y@# HAS_NO_THREADS is not set@;
 s@^# LINUXTHREADS_NEW.*$@LINUXTHREADS_NEW=y@;
 s@^# UCLIBC_SUSV4_LEGACY.*$@UCLIBC_SUSV4_LEGACY=y@;
+s@^# DO_C99_MATH.*$@DO_C99_MATH=y@;
+s@^# DO_XSI_MATH.*$@DO_XSI_MATH=y@;
 ' .config > .config.new
 	mv .config.new .config
 	yes '' | ${MAKE_SINGLE} CROSS="${CCNAME}-" PREFIX="" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="${PREFIX}/" DEVEL_PREFIX="${PREFIX}/" ${extra_make_options} oldconfig
