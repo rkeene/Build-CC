@@ -1,0 +1,43 @@
+#! /bin/bash
+
+# Functions
+function download () {
+	local url
+	local file
+	local tmpfile
+
+	url="$1"
+	file="$2"
+	tmpfile="${file}.tmp"
+
+	if [ -s "${file}" ]; then
+		return 0
+	fi
+
+	mkdir -p "$(dirname "${tmpfile}")" 2>/dev/null >/dev/null
+
+	rm -f "${tmpfile}"
+	wget -O "${tmpfile}" "${url}" || return 1
+
+	mv "${tmpfile}" "${file}"
+
+	return 0
+}
+
+# Determine Linux and uClibc arch name
+## alpha arm avr32 bfin cris e1 frv h8300 hppa i386 i960 ia64 m68k microblaze mips nios nios2 powerpc sh sh64 sparc v850 vax x86_64
+arch="$(echo "${CCNAME}" | cut -f 1 -d '-')"
+case "${arch}" in
+	arm*)
+		arch=arm
+		;;
+	hppa*)
+		arch=hppa
+		;;
+	sparc*)
+		arch=sparc
+		;;
+	i?86)
+		arch=i386
+		;;
+esac

@@ -3,8 +3,11 @@
 # Start in the same working directory as our script
 OURSCP="$(which "$0" 2>/dev/null)"
 if [ -f "${OURSCP}" ]; then
-	cd "$(dirname "${OURSCP}")" || exit 1
+	TOPDIR="$(cd "$(dirname "${OURSCP}")"; pwd)"
 fi
+export TOPDIR
+
+cd "${TOPDIR}" || exit 1
 
 # Load configuration
 ## Provide defaults
@@ -35,8 +38,13 @@ use_pcc=1
 
 ## Parse arguments
 ### Determine list of platforms
-idx=0
+platforms[0]='armv9-unknown-linux-uclibc'
+idx=1
 for platform in "${BUILD_CC_PLATFORMDIR}"/*-platform.tar.bz2; do
+	if [ ! -f "${platform}" ]; then
+		continue
+	fi
+
 	platform="$(basename "${platform}" | sed 's@-platform.tar.bz2$@@')"
 
 	platforms[${idx}]="${platform}"
@@ -117,6 +125,10 @@ if [ "$1" = "clean" -o "$1" = "distclean" ]; then
 		rm -rf "binutils-${platform}"
 	done
 
+	for appscript in scripts/*; do
+		"${appscript}" "clean" >/dev/null 2>/dev/null
+	done
+
 	if [ "$1" = "clean" ]; then
 		exit 0
 	fi
@@ -124,6 +136,10 @@ fi
 
 if [ "$1" = "distclean" ]; then
 	rm -f "${BINUTILS_TARBALL}" "${PCC_TARBALL}" "${PCC_LIBS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}"
+
+	for appscript in scripts/*; do
+		"${appscript}" "distclean" >/dev/null 2>/dev/null
+	done
 
 	rmdir src >/dev/null 2>/dev/null
 
@@ -136,35 +152,18 @@ MAKE_SINGLE="$(echo " ${MAKE} " | sed 's@ -j *[0-9][0-9]* @ @g;s@^  *@@g;s@  *$@
 export MAKE MAKE_SINGLE
 
 ## Functions
-function download () {
-	local url
-	local file
-	local tmpfile
-
-	url="$1"
-	file="$2"
-	tmpfile="${file}.tmp"
-
-	if [ -s "${file}" ]; then
-		return 0
-	fi
-
-	mkdir -p "$(dirname "${tmpfile}")" 2>/dev/null >/dev/null
-
-	rm -f "${tmpfile}"
-	wget -O "${tmpfile}" "${url}" || return 1
-
-	mv "${tmpfile}" "${file}"
-
-	return 0
-}
+. 'scripts/common'
 
 ## Determine path for this cross-compiler
 CCNAME="$1"
 CCDIR="${CCROOT}/${CCNAME}"
 
 ## Determine attributes for this compiler
+### Per CPU
 case "${CCNAME}" in
+	armv9-*)
+		use_pcc='0'
+		;;
 	sparc64-*|sparc-*)
 		use_pcc='0'
 		;;
@@ -172,6 +171,13 @@ case "${CCNAME}" in
 		use_pcc='0'
 
 		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --disable-libquadmath"
+		;;
+esac
+
+### Per OS
+case "${CCNAME}" in
+	*-linux-gnu)
+		true
 		;;
 esac
 
@@ -184,12 +190,32 @@ ADDONS_TARBALL="${BUILD_CC_PLATFORMDIR}/platform/${CCNAME}-addons.tar.bz2"
 	mkdir -p "${CCDIR}/${CCNAME}"
 	cd "${CCDIR}/${CCNAME}" || exit 1
 
-	bzip2 -dc "${PLATFORM_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
+	if [ -f "${PLATFORM_TARBALL}" ]; then
+		bzip2 -dc "${PLATFORM_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
+	fi
 
 	if [ -f "${ADDONS_TARBALL}" ]; then
 		bzip2 -dc "${ADDONS_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
 	fi
 )
+
+## Determine stage of build process
+STAGE="$2"
+
+### If we have a platform tarball and a stage has not been specified, assume we are at stage 2
+if [ -z "${STAGE}" ]; then
+	if [ -f "${PLATFORM_TARBALL}" ]; then
+		STAGE="stage2"
+	else
+		STAGE="stage1"
+	fi
+fi
+
+### Normalize stage names
+if [ "${STAGE}" != "stage1" ]; then
+	STAGE="stage2"
+fi
+export STAGE
 
 ## Compile binutils for this platform if needed
 (
@@ -217,9 +243,18 @@ rm -rf "binutils-${CCNAME}"
 
 ## Compile C compiler (PCC or GCC) if needed
 (
+	### Determine if compilation is needed
 	if [ -f "${CCDIR}/bin/${CCNAME}-gcc" ]; then
 		if find "${CCDIR}/lib/gcc" -type f -name 'libgcc.a' | grep libgcc >/dev/null; then
-			exit 2
+			if [ "${STAGE}" = "stage1" ]; then
+				#### A stage1 compiler is available
+				exit 2
+			else
+				#### Determine if a stage2 compiler has been built
+				if find "${CCDIR}/lib/gcc" -type f -name 'libgcc_s.*' | grep libgcc_s >/dev/null; then
+					exit 2
+				fi
+			fi
 		fi
 	fi
 
@@ -283,15 +318,44 @@ rm -rf "binutils-${CCNAME}"
 	cd "gcc-${CCNAME}" || exit -1
 
 	## Build GCC
-	"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+	### XXX: GCC produces a broken compiler
+	libgcceha="${CCDIR}/lib/gcc/${CCNAME}/${GCC_VERS}/libgcc_eh.a"
+	if [ "${STAGE}" = "stage1" ]; then
+		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
-	${MAKE} || exit 1
-	${MAKE} install || exit 1
+		${MAKE} all-gcc all-target-libgcc || exit 1
+		${MAKE} install-gcc install-target-libgcc || exit 1
+
+		### XXX: Create symlink for libgcc_eh.a since GCC references
+		### it without building it for static (disable-shared) builds
+		rm -f "${libgcceha}"
+		ln -s libgcc.a "${libgcceha}"
+	else
+		### XXX: Clean up this symlink to prevent it from potentially
+		### being preserved.
+		if [ -h "${libgcceha}" ]; then
+			rm -f "${libgcceha}"
+		fi
+
+		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+
+		${MAKE} || exit 1
+		${MAKE} install || exit 1
+	fi
 )
 retval="$?"
 
+## Re-build gcc (if we were able to build it first) without shared object
+## support.  This is to prevent us from linking to "libgcc_s" by default
+## which is annonying for cross-compilers.
 if [ "${retval}" = "0" ]; then
 	(
+		if [ "${STAGE}" = "stage1" ]; then
+			### This step is not needed for stage1 cross-compilers
+			### since we will be rebuilding in stage2
+			exit 0
+		fi
+
 		# Build GCC without shared object support
 		## Create build directory
 		rm -rf "gcc-${CCNAME}"
@@ -304,6 +368,8 @@ if [ "${retval}" = "0" ]; then
 		${MAKE} || exit 1
 		${MAKE} install || exit 1
 	) || exit 1
+elif [ "${retval}" != "2" ]; then
+	exit 1
 fi
 rm -rf "gcc-${CCNAME}"
 
@@ -367,5 +433,34 @@ rm -rf "gcc-${CCNAME}"
 	${MAKE} install || exit 1
 ) || exit 1
 
-# Clean up
+## Install libraries for this platform
+for appscript in scripts/*; do
+	if echo "${appscripts}" | grep '/common$' >/dev/null; then
+		continue
+	fi
+
+	if [ ! -x "${appscript}" ]; then
+		continue
+	fi
+
+	(
+		PATH="${PATH}:${CCDIR}/bin"
+		CC="${CCNAME}-gcc"
+		LD="${CCNAME}-ld"
+		CXX="${CCNAME}-g++"
+		AR="${CCNAME}-ar"
+		STRIP="${CCNAME}-strip"
+		RANLIB="${CCNAME}-ranlib"
+		export PATH CC LD CXX AR STRIP RANLIB
+
+		"${appscript}" "${CCNAME}" "${CCDIR}" "${CCDIR}/${CCNAME}" "${STAGE}" || exit 1
+	)
+done
+
+## Do it all again for the next stage
+if [ "${STAGE}" = "stage1" ]; then
+	"$0" "${CCNAME}" "stage2" || exit "$?"
+fi
+
+## Clean up
 exit 0

@@ -1,0 +1,64 @@
+#! /bin/bash
+
+# URLs and versions
+LINUX_VERS='3.0'
+LINUX_VERS_SHORT="$(echo "${LINUX_VERS}" | cut -f 1-2 -d '.')"
+LINUX_URL="http://www.kernel.org/pub/linux/kernel/v${LINUX_VERS_SHORT}/linux-${LINUX_VERS}.tar.bz2"
+LINUX_TARBALL="src/linux-${LINUX_VERS}.tar.bz2"
+LINUX_DIR="linux-${LINUX_VERS}"
+
+# Main script
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+
+# Clean
+if [ "$1" = "distclean" ]; then
+	rm -f "${LINUX_TARBALL}"
+
+	set -- clean
+fi
+
+if [ "$1" = "clean" ]; then
+	rm -rf "${LINUX_DIR}"
+
+	exit 0
+fi
+
+# Only build glibc for linux-gnu platforms
+if ! echo "${CCNAME}" | grep -- '-linux' >/dev/null; then
+	exit 0
+fi
+
+# Kernel headers are only needed for Stage 1
+if [ "${STAGE}" != "stage1" ]; then
+	exit 0
+fi
+
+if [ -d "${PREFIX}/include/linux" ]; then
+	exit 0
+fi
+
+# Download source
+. 'scripts/common'
+
+# Inform the user of what we are doing
+echo " * Building Linux kernel headers for ${arch}"
+
+download "${LINUX_URL}" "${LINUX_TARBALL}" || exit 1
+
+rm -rf "${LINUX_DIR}"
+bzip2 -dc "${LINUX_TARBALL}" | tar -xf -
+
+(
+	cd "${LINUX_DIR}" || exit 1
+
+	${MAKE_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" defconfig || exit 1
+
+	${MAKE_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" INSTALL_HDR_PATH="${PREFIX}" headers_install || exit 1
+) || exit 1
+
+rm -rf "${LINUX_DIR}"
+
+exit 0

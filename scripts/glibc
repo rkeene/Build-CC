@@ -1,0 +1,57 @@
+#! /bin/bash
+
+# URLs and versions
+GLIBC_VERS='2.14'
+GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
+GLIBC_TARBALL="src/glibc-${GLIBC_VERS}.tar.gz"
+GLIBC_DIR="glibc-${GLIBC_VERS}"
+
+# Main script
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+
+# Clean
+if [ "$1" = "distclean" ]; then
+	rm -f "${GLIBC_TARBALL}"
+
+	set -- clean
+fi
+
+if [ "$1" = "clean" ]; then
+	rm -rf "${GLIBC_DIR}"
+	rm -rf glibc-*-*-*
+
+	exit 0
+fi
+
+# Only build glibc for linux-gnu platforms
+if ! echo "${CCNAME}" | grep -- '-linux-gnu' >/dev/null; then
+	exit 0
+fi
+
+# Inform the user of what we are doing
+echo ' * Building GNU C Library (glibc)'
+
+# Download source
+. 'scripts/common'
+
+if [ ! -d "${GLIBC_DIR}" ]; then
+	download "${GLIBC_URL}" "${GLIBC_TARBALL}" || exit 1
+
+	gzip -dc "${GLIBC_TARBALL}" | tar -xf -
+fi
+
+rm -rf "glibc-${CCNAME}"
+mkdir "glibc-${CCNAME}"
+cd "glibc-${CCNAME}" || exit 1
+
+"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --host="${CCNAME}" || exit 1
+
+${MAKE} || exit 1
+
+${MAKE} install || exit 1
+
+rm -rf "glibc-${CCNAME}"
+
+exit 0

@@ -1,0 +1,68 @@
+#! /bin/bash
+
+# URLs and versions
+UCLIBC_VERS='0.9.32'
+UCLIBC_URL="http://uclibc.org/downloads/uClibc-${UCLIBC_VERS}.tar.bz2"
+UCLIBC_TARBALL="src/uClibc-${UCLIBC_VERS}.tar.bz2"
+UCLIBC_DIR="uClibc-${UCLIBC_VERS}"
+
+# Main script
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+
+# Clean
+if [ "$1" = "distclean" ]; then
+	rm -f "${UCLIBC_TARBALL}"
+
+	set -- clean
+fi
+
+if [ "$1" = "clean" ]; then
+	rm -rf "${UCLIBC_DIR}"
+
+	exit 0
+fi
+
+# Only build uclibc for linux-uclibc platforms
+if ! echo "${CCNAME}" | grep -- '-linux-uclibc' >/dev/null; then
+	exit 0
+fi
+
+# Skip building if we are already installed
+if [ -f "${PREFIX}/lib/ld-uClibc.so.0" ]; then
+	exit 0
+fi
+
+# Inform the user of what we are doing
+echo ' * Building micro C library (uClibc)'
+
+# Download source
+. 'scripts/common'
+
+# Ensure that we get a consistent build between the C compiler and the C library
+case "${CCNAME}" in
+	armv9-*)
+		## GCC produces big-endian libraries by default for "armv9", do the same
+		extra_make_options="${extra_make_options} ARCH_LITTLE_ENDIAN=y ARCH_BIG_ENDIAN=n"
+		;;
+esac
+
+download "${UCLIBC_URL}" "${UCLIBC_TARBALL}" || exit 1
+
+rm -rf "${UCLIBC_DIR}"
+bzip2 -dc "${UCLIBC_TARBALL}" | tar -xf -
+
+(
+	cd "${UCLIBC_DIR}" || exit 1
+
+	${MAKE} CROSS="${CCNAME}-" PREFIX="${PREFIX}" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX='/' DEVEL_PREFIX='/' ${extra_make_options} defconfig || exit 1
+
+	${MAKE} CROSS="${CCNAME}-" PREFIX="${PREFIX}" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX='/' DEVEL_PREFIX='/' ${extra_make_options} || exit 1
+
+	${MAKE} CROSS="${CCNAME}-" PREFIX="${PREFIX}" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX='/' DEVEL_PREFIX='/' ${extra_make_options} install || exit 1
+) || exit 1
+
+rm -rf "${UCLIBC_DIR}"
+
+exit 0
