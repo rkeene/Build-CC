@@ -1,9 +1,9 @@
-BUILD_CC_VERSION = $(shell svn stat build-cc collect-platform patches scripts platform | grep '^M' >/dev/null && echo `date +%Y%m%dT%H%M` || svn info -R build-cc collect-platform patches scripts platform | grep 'Last Changed Rev: ' | sed 's@^Last Changed Rev: @r@' | sort -n | tail -1)
+BUILD_CC_VERSION = $(shell svn stat Makefile build-cc collect-platform patches scripts platform | grep '^M' >/dev/null && echo `date +%Y%m%dT%H%M` || svn info -R build-cc collect-platform patches scripts platform | grep 'Last Changed Rev: ' | sed 's@^Last Changed Rev: @r@' | sort -n | tail -1)
 BUILD_CC_RELEASE = build-cc-$(BUILD_CC_VERSION).tar.gz
 
 all: $(BUILD_CC_RELEASE)
 
-build-cc-%.tar.gz: build-cc collect-platform patches scripts
+build-cc-%.tar.gz: Makefile build-cc collect-platform patches scripts
 	rm -rf __tmp__
 	mkdir __tmp__
 	mkdir -p __tmp__/$(shell echo "$@" | sed 's@\.tar\.gz$$@@')/platform
