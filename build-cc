@@ -242,6 +242,16 @@ export STAGE
 rm -rf "binutils-${CCNAME}"
 
 ## Compile C compiler (PCC or GCC) if needed
+### Prepare GCC fix-ups (stage1)
+if [ "${STAGE}" = "stage1" ]; then
+	### XXX: GCC produces a broken compiler -- compiles require libgcc_eh.a, which it doesn't emit
+	libgcceha="${CCDIR}/lib/gcc/${CCNAME}/${GCC_VERS}/libgcc_eh.a"
+	if [ -h "${libgcceha}" ]; then
+		rm -f "${libgcceha}"
+	fi
+fi
+
+## Compile
 (
 	### Determine if compilation is needed
 	if [ -f "${CCDIR}/bin/${CCNAME}-gcc" ]; then
@@ -318,25 +328,15 @@ rm -rf "binutils-${CCNAME}"
 	cd "gcc-${CCNAME}" || exit -1
 
 	## Build GCC
-	### XXX: GCC produces a broken compiler
-	libgcceha="${CCDIR}/lib/gcc/${CCNAME}/${GCC_VERS}/libgcc_eh.a"
 	if [ "${STAGE}" = "stage1" ]; then
 		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} all-gcc all-target-libgcc || exit 1
 		${MAKE} install-gcc install-target-libgcc || exit 1
 
-		### XXX: Create symlink for libgcc_eh.a since GCC references
-		### it without building it for static (disable-shared) builds
-		rm -f "${libgcceha}"
-		ln -s libgcc.a "${libgcceha}"
 	else
 		### XXX: Clean up this symlink to prevent it from potentially
 		### being preserved.
-		if [ -h "${libgcceha}" ]; then
-			rm -f "${libgcceha}"
-		fi
-
 		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} || exit 1
@@ -344,6 +344,16 @@ rm -rf "binutils-${CCNAME}"
 	fi
 )
 retval="$?"
+
+### XXX: Create symlink for libgcc_eh.a since GCC references
+### it without building it for static (disable-shared) builds
+if [ "${STAGE}" = "stage1" ]; then
+	if [ -h "${libgcceha}" ]; then
+		rm -f "${libgcceha}"
+	fi
+
+	ln -s libgcc.a "${libgcceha}"
+fi
 
 ## Re-build gcc (if we were able to build it first) without shared object
 ## support.  This is to prevent us from linking to "libgcc_s" by default
@@ -454,7 +464,7 @@ for appscript in scripts/*; do
 		export PATH CC LD CXX AR STRIP RANLIB
 
 		"${appscript}" "${CCNAME}" "${CCDIR}" "${CCDIR}/${CCNAME}" "${STAGE}" || exit 1
-	)
+	) || exit 1
 done
 
 ## Do it all again for the next stage
