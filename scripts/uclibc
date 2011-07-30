@@ -48,7 +48,7 @@ echo ' * Building micro C library (uClibc)'
 
 # Ensure that we get a consistent build between the C compiler and the C library
 case "${CCNAME}" in
-	armv9-*)
+	armv9-*|armel-*)
 		## GCC produces big-endian libraries by default for "armv9", do the same
 		extra_make_options="${extra_make_options} ARCH_LITTLE_ENDIAN=y ARCH_BIG_ENDIAN=n"
 		;;
