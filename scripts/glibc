@@ -6,6 +6,11 @@ GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_TARBALL="src/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_DIR="glibc-${GLIBC_VERS}"
 
+GLIBC_PORTS_VERS='2.13'
+GLIBC_PORTS_URL="http://ftp.gnu.org/gnu/glibc/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
+GLIBC_PORTS_TARBALL="src/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
+GLIBC_PORTS_DIR="$(pwd)/glibc-ports-${GLIBC_PORTS_VERS}"
+
 # Main script
 CCNAME="$1"
 CCDIR="$2"
@@ -21,6 +26,7 @@ fi
 
 if [ "$1" = "clean" ]; then
 	rm -rf "${GLIBC_DIR}"
+	rm -rf "${GLIBC_PORTS_DIR}"
 	rm -rf glibc-*-*-*
 
 	exit 0
@@ -48,11 +54,17 @@ if [ ! -d "${GLIBC_DIR}" ]; then
 	gzip -dc "${GLIBC_TARBALL}" | tar -xf -
 fi
 
+if [ ! -d "${GLIBC_PORTS_DIR}" ]; then
+	download "${GLIBC_PORTS_URL}" "${GLIBC_PORTS_TARBALL}" || exit 1
+
+	gzip -dc "${GLIBC_PORTS_TARBALL}" | tar -xf -
+fi
+
 rm -rf "glibc-${CCNAME}"
 mkdir "glibc-${CCNAME}"
 cd "glibc-${CCNAME}" || exit 1
 
-"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --host="${CCNAME}" || exit 1
+"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --host="${CCNAME}" --enable-add-ons="${GLIBC_PORTS_DIR}" || exit 1
 
 ${MAKE} || exit 1
 
