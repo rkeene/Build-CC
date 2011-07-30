@@ -350,7 +350,9 @@ if [ "${STAGE}" = "stage1" ]; then
 		rm -f "${libgcceha}"
 	fi
 
-	ln -s libgcc.a "${libgcceha}"
+	if [ ! -f "${libgcceha}" ]; then
+		ln -s libgcc.a "${libgcceha}"
+	fi
 fi
 
 ## Re-build gcc (if we were able to build it first) without shared object
