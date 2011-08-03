@@ -321,7 +321,7 @@ fi
 	rm -f "${GCC_DIR}/BUILD-CC_PATCHES_APPLIED"
 
 	## Apply host-specific patches
-	for patchfile in "$(pwd)/patches/${CCNAME}/gcc"/*.diff; do
+	for patchfile in "$(pwd)/patches/all/gcc"/*.diff "$(pwd)/patches/${CCNAME}/gcc"/*.diff; do
 		if [ ! -f "${patchfile}" ]; then
 			continue
 		fi
@@ -345,12 +345,14 @@ fi
 
 	## Build GCC
 	if [ "${STAGE}" = "stage1" ]; then
+		### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
 		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} all-gcc all-target-libgcc || exit 1
 		${MAKE} install-gcc install-target-libgcc || exit 1
 
 	else
+		### Stage 2 -- the full compiler suite
 		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} || exit 1
@@ -371,40 +373,25 @@ if [ "${STAGE}" = "stage1" ]; then
 	fi
 fi
 
-## Re-build gcc (if we were able to build it first) without shared object
-## support.  This is to prevent us from linking to "libgcc_s" by default
-## which is annonying for cross-compilers.
-if [ "${retval}" = "0" ]; then
-	(
-		if [ "${STAGE}" = "stage1" ]; then
-			### This step is not needed for stage1 cross-compilers
-			### since we will be rebuilding in stage2
-			exit 0
-		fi
-
-		# Build GCC without shared object support
-		## Create build directory
-		rm -rf "gcc-${CCNAME}"
-		mkdir "gcc-${CCNAME}"
-		cd "gcc-${CCNAME}" || exit -1
-
-		## Build GCC
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' --disable-shared ${BUILD_CC_GCC_CONFIGURE_EXTRA}
-
-		${MAKE} || exit 1
-		${MAKE} install || exit 1
-	) || exit 1
-elif [ "${retval}" != "2" ]; then
+### If we exited with failure above, abort
+if [ "${retval}" != "2" -a "${retval}" != "0" ]; then
 	exit 1
 fi
 rm -rf "gcc-${CCNAME}"
 
 ### Install PCC
 (
+	#### Stage 2 only
+	if [ "${STAGE}" != "stage2" ]; then
+		exit 0
+	fi
+
+	#### Only if requested
 	if [ "${use_pcc}" != "1" ]; then
 		exit 0
 	fi
 
+	#### Only if not already installed
 	if [ -f "${CCDIR}/bin/${CCNAME}-pcc" ]; then
 		exit 0
 	fi
@@ -427,14 +414,22 @@ rm -rf "gcc-${CCNAME}"
 ) || exit 1
 
 (
+	#### Stage 2 only
+	if [ "${STAGE}" != "stage2" ]; then
+		exit 0
+	fi
+
+	#### Only if requested
 	if [ "${use_pcc}" != "1" ]; then
 		exit 0
 	fi
 
+	#### Only if not already installed
 	if find "${CCDIR}/lib/pcc/${CCNAME}" -name libpcc.a -type f | grep libpcc >/dev/null; then
 		exit 0
 	fi
 
+	#### Build with newly built cross-compiler
 	PATH="${PATH}:${CCDIR}/bin"
 	CC="${CCNAME}-pcc"
 	AR="${CCNAME}-ar"
@@ -449,7 +444,7 @@ rm -rf "gcc-${CCNAME}"
 
 	cd "${PCC_LIBS_DIR}" || exit 1
 
-	### PCC does not work with parallel make
+	#### PCC does not work with parallel make
 	MAKE="${MAKE_SINGLE}"
 
 	./configure --host="${CCNAME}" --prefix="${CCDIR}"

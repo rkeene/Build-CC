@@ -1,5 +1,8 @@
 #! /bin/bash
 
+### XXX: Dietlibc is currently broken
+exit 0
+
 # URLs and versions
 DIETLIBC_VERS='0.32'
 DIETLIBC_URL="http://www.kernel.org/pub/linux/libs/dietlibc/dietlibc-${DIETLIBC_VERS}.tar.bz2"
