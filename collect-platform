@@ -44,6 +44,17 @@ if [ -z "${PLATFORM}" ]; then
 		NetBSD)
 			PLATFORM="$(uname -p)-unknown-netbsd$(uname -r | cut -f 1 -d '.')"
 			;;
+		FreeBSD)
+			# Determine more generic CPU platform name
+			cpu_platform="$(uname -p)"
+			case "${cpu_platform}" in
+				amd64)
+					cpu_platform="x86_64"
+					;;
+			esac
+
+			PLATFORM="${cpu_platform}-unknown-freebsd$(uname -r | cut -f 1 -d '.')"
+			;;
 	esac
 fi
 
@@ -190,9 +201,20 @@ case "${PLATFORM}" in
 		done
 		;;
 	*)
-		echo 'WARNING: Unknown system type, using generic collection' >&2
+		# Print a warning if this is an unknown platform
+		case "${PLATFORM}" in
+			*-freebsd*)
+				# FreeBSD is generic, non-multilib
+				;;
+			*)
+				echo 'WARNING: Unknown system type, using generic collection' >&2
+				;;
+		esac
 
 		# Libraries
+		cp /usr/local/lib/*.o "${PLATFORM_LIB}"
+		cp /usr/local/lib/lib*.so* "${PLATFORM_LIB}"
+		cp /usr/local/lib/lib*.a "${PLATFORM_LIB}"
 		cp /usr/lib/*.o "${PLATFORM_LIB}"
 		cp /usr/lib/lib*.so* "${PLATFORM_LIB}"
 		cp /usr/lib/lib*.a "${PLATFORM_LIB}"
@@ -201,6 +223,7 @@ case "${PLATFORM}" in
 		cp /lib/lib*.a "${PLATFORM_LIB}"
 
 		# Headers
+		cp -rp /usr/local/include/* "${PLATFORM_INCLUDE}/"
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
 		;;
 esac
