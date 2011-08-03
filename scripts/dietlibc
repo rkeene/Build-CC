@@ -53,8 +53,8 @@ bzip2 -dc "${DIETLIBC_TARBALL}" | tar -xf -
 
 # Patch up source as needed
 case "${CCNAME}" in
-        armv9-*)
-		sed 's@-mabi=aapcs-linux @-mabi=aapcs-linux -mfpu=vfp @' "${DIETLIBC_DIR}/arm/Makefile.add" > "${DIETLIBC_DIR}/arm/Makefile.add.new"
+	armel-*)
+		sed 's@-mabi=aapcs-linux.*@@' "${DIETLIBC_DIR}/arm/Makefile.add" > "${DIETLIBC_DIR}/arm/Makefile.add.new"
 		cat "${DIETLIBC_DIR}/arm/Makefile.add.new" > "${DIETLIBC_DIR}/arm/Makefile.add"
 		rm -f "${DIETLIBC_DIR}/arm/Makefile.add.new"
                 ;;
