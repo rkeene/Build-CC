@@ -41,6 +41,9 @@ if [ -z "${PLATFORM}" ]; then
 				PLATFORM="ia64-hp-hpux${HPUX_VERSION}"
 			fi
 			;;
+		NetBSD)
+			PLATFORM="$(uname -p)-unknown-netbsd$(uname -r | cut -f 1 -d '.')"
+			;;
 	esac
 fi
 
@@ -80,6 +83,30 @@ case "${PLATFORM}" in
 		cp /usr/lib/lib*.so* "${PLATFORM_LIB}/"
 		cp /usr/lib/lib*.a "${PLATFORM_LIB}/"
 		ln -s '.' "${PLATFORM_LIB}/32"
+
+		# Headers
+		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+		;;
+	*-netbsd*)
+		# Libraries
+		## Determine sub-archs
+		for subarch in i386 sparc; do
+			subarchdir="/usr/lib/${subarch}"
+			if [ ! -d "${subarchdir}" ]; then
+				continue
+			fi
+
+			mkdir "${PLATFORM_LIB}/${subarch}"
+			cp "${subarchdir}"/*.o "${PLATFORM_LIB}/${subarch}/"
+			cp "${subarchdir}"/lib*.so "${PLATFORM_LIB}/${subarch}/"
+			cp "${subarchdir}"/lib*.a "${PLATFORM_LIB}/${subarch}/"
+		done
+
+		cp /usr/lib/*.o "${PLATFORM_LIB}/"
+		cp /lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /lib/lib*.a "${PLATFORM_LIB}/"
+		cp /usr/lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /usr/lib/lib*.a "${PLATFORM_LIB}/"
 
 		# Headers
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"

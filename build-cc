@@ -35,10 +35,11 @@ MPC_VERS='0.9'
 # Start of script
 ## Initialize default values
 use_pcc=0
+use_multilib=0
 
 ## Parse arguments
 ### Determine list of platforms
-platforms[0]='armv9-unknown-linux-uclibc'
+platforms[0]='armel-unknown-linux-uclibc'
 idx=1
 for platform in "${BUILD_CC_PLATFORMDIR}"/*-platform.tar.bz2; do
 	if [ ! -f "${platform}" ]; then
@@ -174,8 +175,12 @@ esac
 
 ### Per OS
 case "${CCNAME}" in
-	*-linux-gnu)
-		true
+	*-solaris2*)
+		use_multilib='1'
+		;;
+	*-netbsd5*)
+		use_pcc='0'
+		use_multilib='1'
 		;;
 esac
 
@@ -247,6 +252,11 @@ if [ "${STAGE}" = "stage1" ]; then
 	if [ -h "${libgcceha}" ]; then
 		rm -f "${libgcceha}"
 	fi
+fi
+
+### If multilib was not requested, disable it
+if [ "${use_multilib}" = "0" ]; then
+	BUILD_CC_GCC_CONFIGURE_EXTRA="--disable-multilib ${BUILD_CC_GCC_CONFIGURE_EXTRA}"
 fi
 
 ## Compile
@@ -333,8 +343,6 @@ fi
 		${MAKE} install-gcc install-target-libgcc || exit 1
 
 	else
-		### XXX: Clean up this symlink to prevent it from potentially
-		### being preserved.
 		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} || exit 1

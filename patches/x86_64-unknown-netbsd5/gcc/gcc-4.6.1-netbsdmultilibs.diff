@@ -1,0 +1,13 @@
+--- gcc-4.6.1/gcc/config/t-netbsd	2007-08-06 14:58:11.000000000 -0500
++++ gcc-4.6.1-netbsdmultilibs/gcc/config/t-netbsd	2011-08-02 23:58:03.000000000 -0500
+@@ -1,2 +1,10 @@
+ # Always build crtstuff with PIC.
+ CRTSTUFF_T_CFLAGS_S = $(CRTSTUFF_T_CFLAGS) -fPIC
++
++# Hack i386 multilib support into x86_64 NetBSD
++MULTILIB_OPTIONS = m32/m64
++MULTILIB_DIRNAMES = i386 .
++MULTILIB_OSDIRNAMES = i386 .
++
++LIBGCC = stmp-multilib
++INSTALL_LIBGCC = install-multilib

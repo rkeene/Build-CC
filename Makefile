@@ -9,7 +9,7 @@ build-cc-%.tar.gz: Makefile build-cc collect-platform patches scripts
 	mkdir -p __tmp__/$(shell echo "$@" | sed 's@\.tar\.gz$$@@')/platform
 	mkdir -p __tmp__/$(shell echo "$@" | sed 's@\.tar\.gz$$@@')/scripts
 	cp -rp build-cc collect-platform patches __tmp__/*/
-	-cp platform/*-addons.tar.bz2 __tmp__/*/platform/
+	-cp platform/*-addons.tar.bz2 platform/README.txt __tmp__/*/platform/
 	cp scripts/* __tmp__/*/scripts/
 	cd __tmp__/* && sed 's@^CCROOT=.*@CCROOT="/opt/compilers"@' build-cc > build-cc.new && cat build-cc.new > build-cc && rm build-cc.new
 	cd __tmp__; tar --exclude .svn -zcf "../$@" *
