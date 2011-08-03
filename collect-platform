@@ -100,6 +100,17 @@ case "${PLATFORM}" in
 		;;
 	*-netbsd*)
 		# Libraries
+		## Determine the X11 sub-directory
+		for xdir in X11R7 X11R6 __fail__; do
+			if [ -d "/usr/${xdir}/lib" ]; then
+				break
+			fi
+
+			if [ "${xdir}" = "__fail__" ]; then
+				echo 'WARNING: Unable to find X11 libraries, collection will be incomplete!' >&2
+			fi
+		done
+
 		## Determine sub-archs
 		for subarch in i386 sparc; do
 			subarchdir="/usr/lib/${subarch}"
@@ -113,13 +124,18 @@ case "${PLATFORM}" in
 			cp "${subarchdir}"/lib*.a "${PLATFORM_LIB}/${subarch}/"
 		done
 
+		cp /usr/${xdir}/lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /usr/${xdir}/lib/*.a "${PLATFORM_LIB}/"
+
 		cp /usr/lib/*.o "${PLATFORM_LIB}/"
-		cp /lib/lib*.so* "${PLATFORM_LIB}/"
-		cp /lib/lib*.a "${PLATFORM_LIB}/"
 		cp /usr/lib/lib*.so* "${PLATFORM_LIB}/"
 		cp /usr/lib/lib*.a "${PLATFORM_LIB}/"
 
+		cp /lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /lib/lib*.a "${PLATFORM_LIB}/"
+
 		# Headers
+		cp -rp /usr/${xdir}/include/* "${PLATFORM_INCLUDE}/"
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
 		;;
 	*-hpux11*)
