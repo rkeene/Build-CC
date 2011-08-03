@@ -1,5 +1,13 @@
 #! /bin/bash
 
+# build-cc @@VERS@@
+
+if [ "$1" == "--version" ]; then
+	echo 'build-cc @@VERS@@'
+
+	exit 0
+fi
+
 # Start in the same working directory as our script
 OURSCP="$(which "$0" 2>/dev/null)"
 if [ -f "${OURSCP}" ]; then
