@@ -1,0 +1,85 @@
+#! /bin/bash
+
+CCROOT="$(dirname "$(which "$0")")"
+
+idx=0
+for platform in "${CCROOT}"/*; do
+	if [ ! -d "${platform}" ]; then
+		continue
+	fi
+
+        platform="$(basename "${platform}")"
+
+	if [ ! -d "${CCROOT}/${platform}/${platform}" ]; then
+		continue
+	fi
+
+        platforms[${idx}]="${platform}"
+        idx=$[${idx} + 1]
+done
+
+if [ -z "$1" ]; then
+	echo "Available platforms:"
+
+	for platform in "${platforms[@]}"; do
+		echo "  ${platform}"
+	done
+
+	exit 0
+fi
+
+CCNAME="$1"
+shift
+
+found='0'
+for platform in "${platforms[@]}"; do
+	if [ "${platform}" = "${CCNAME}" ]; then
+		found='1'
+		break
+	fi
+done
+
+if [ "${found}" != '1' ]; then
+	echo "Unknown platform: ${CCNAME}" >&2
+
+	exit 1
+fi
+
+case "${CCNAME}" in
+	x86_64-*|hppa64-*)
+		have_64bit='1'
+		;;
+	*)
+		have_64bit='0'
+		;;
+esac
+
+if [ -n "$1" ]; then
+	if [ "$1" = "64" ]; then
+		want_64bit='1'
+	else
+		want_64bit='0'
+	fi
+else
+	want_64bit="${have_64bit}"
+fi
+
+if [ "${have_64bit}" != "${want_64bit}" ]; then
+	if [ "${want_64bit}" = "1" ]; then
+		CC_ADD=' -m64'
+	else
+		CC_ADD=' -m32'
+	fi
+fi
+
+CCROOT="$(readlink -f "${CCROOT}")"
+echo "PATH='${CCROOT}/${CCNAME}/${CCNAME}/bin:${PATH}:${CCROOT}/${CCNAME}/bin';"
+echo "AR='${CCNAME}-ar';"
+echo "AS='${CCNAME}-as';"
+echo "CC='${CCNAME}-gcc${CC_ADD}';"
+echo "CXX='${CCNAME}-g++${CC_ADD}';"
+echo "LD='${CCNAME}-ld';"
+echo "NM='${CCNAME}-nm';"
+echo "RANLIB='${CCNAME}-ranlib';"
+echo "STRIP='${CCNAME}-strip';"
+echo 'export PATH AR AS CC CXX LD NM RANLIB STRIP;'
