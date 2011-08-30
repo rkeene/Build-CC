@@ -56,7 +56,12 @@ if [ -z "${PLATFORM}" ]; then
 			PLATFORM="${cpu_platform}-unknown-freebsd$(uname -r | cut -f 1 -d '.')"
 			;;
 		Darwin)
-			PLATFORM="$(uname -p)-apple-darwin$(uname -r | cut -f 1 -d '.')"
+			case "$(uname -r)" in
+				11.*)
+					cpu_platform="x86_64"
+					;;
+			esac
+			PLATFORM="${cpu_platform}-apple-darwin$(uname -r | cut -f 1 -d '.')"
 			;;
 	esac
 fi
