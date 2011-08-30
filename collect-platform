@@ -55,6 +55,9 @@ if [ -z "${PLATFORM}" ]; then
 
 			PLATFORM="${cpu_platform}-unknown-freebsd$(uname -r | cut -f 1 -d '.')"
 			;;
+		Darwin)
+			PLATFORM="$(uname -p)-apple-darwin$(uname -r | cut -f 1 -d '.')"
+			;;
 	esac
 fi
 
@@ -215,6 +218,35 @@ case "${PLATFORM}" in
 		) | while read file; do
 			cat "/usr/include/${file}" > "${PLATFORM_INCLUDE}/${file}"
 		done
+		;;
+	*-darwin*)
+		# Determine path to SDK
+		## Determine Mac OS X version
+		macosxvers_maj='10'
+		macosxvers_min="$[$(uname -r | cut -f 1 -d '.') - 4]"
+
+		## Determine SDK path from version
+		sdkroot='/Developer/SDKs'
+		if [ -d "${sdkroot}/MacOSX${macosxvers_maj}.${macosxvers_min}.sdk" ]; then
+			sdkdir="${sdkroot}/MacOSX${macosxvers_maj}.${macosxvers_min}.sdk"
+		else
+			sdkdir="$(ls -1 "${sdkroot}/MacOSX${macosxvers_maj}.${macosxvers_min}*.sdk" | head -1)"
+		fi
+
+		# Libraries
+		cp /usr/lib/*.o "${PLATFORM_LIB}"
+		cp /usr/lib/lib*.dylib* "${PLATFORM_LIB}"
+		cp /usr/lib/lib*.a "${PLATFORM_LIB}"
+
+		# Headers
+		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+
+		# Frameworks
+		PLATFORM_FRAMEWORKS="${PLATFORM_ROOT}/System/Library/Frameworks"
+		export PLATFORM_FRAMEWORKS
+
+		mkdir -p "${PLATFORM_FRAMEWORKS}"
+		cp -rp "${sdkdir}/System/Library/Frameworks"/*.framework "${PLATFORM_FRAMEWORKS}"
 		;;
 	*)
 		# Print a warning if this is an unknown platform
