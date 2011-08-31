@@ -243,6 +243,11 @@ case "${PLATFORM}" in
 		cp /usr/lib/lib*.dylib* "${PLATFORM_LIB}"
 		cp /usr/lib/lib*.a "${PLATFORM_LIB}"
 
+		mkdir "${PLATFORM_LIB}/system"
+		cp /usr/lib/system/*.o "${PLATFORM_LIB}/system/"
+		cp /usr/lib/system/lib*.dylib* "${PLATFORM_LIB}/system/"
+		cp /usr/lib/system/lib*.a "${PLATFORM_LIB}/system/"
+
 		# Headers
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
 
