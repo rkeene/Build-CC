@@ -45,6 +45,8 @@ ODCCTOOLS_VERS='622.3od16+2rsk'
 ## Initialize default values
 use_pcc=0
 use_multilib=0
+use_gnu_ld='1'
+use_gnu_as='1'
 
 ## Parse arguments
 ### Determine list of platforms
@@ -188,8 +190,6 @@ case "${CCNAME}" in
 esac
 
 ### Per OS
-use_gnu_ld='1'
-use_gnu_as='1'
 case "${CCNAME}" in
 	*-solaris2*)
 		use_multilib='1'
@@ -201,6 +201,7 @@ case "${CCNAME}" in
 	*-darwin*)
 		use_gnu_ld='0'
 		use_gnu_as='0'
+		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-ld=${CCDIR}/${CCNAME}/bin/ld --with-as=${CCDIR}/${CCNAME}/bin/as"
 		;;
 esac
 
@@ -271,11 +272,21 @@ export STAGE
 	${MAKE} || exit 1
 
 	${MAKE} install || exit 1
+
+	mkdir -p "${CCDIR}/${CCNAME}/bin"
+	(
+		cd "${CCDIR}/${CCNAME}/bin" || exit 1
+
+		for src in ../../bin/${CCNAME}-*; do
+			dest="$(echo "${src}" | sed "s@^.*/${CCNAME}-@@")"
+			ln -s "${src}" "${dest}"
+		done
+	)
 ) || exit 1
 
 ## Compile binutils for this platform if needed
 (
-	if [ -f "${CCDIR}/bin/${CCNAME}-as" ]; then
+	if [ -f "${CCDIR}/bin/${CCNAME}-objcopy" ]; then
 		exit 0
 	fi
 
