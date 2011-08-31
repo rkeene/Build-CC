@@ -39,6 +39,7 @@ GCC_VERS='4.6.1'
 GMP_VERS='5.0.2'
 MPFR_VERS='3.0.1'
 MPC_VERS='0.9'
+ODCCTOOLS_VERS='622.3od16+2rsk'
 
 # Start of script
 ## Initialize default values
@@ -125,9 +126,14 @@ MPC_URL="http://www.multiprecision.org/mpc/download/mpc-${MPC_VERS}.tar.gz"
 MPC_TARBALL="src/mpc-${MPC_VERS}.tar.gz"
 MPC_DIR="mpc-${MPC_VERS}"
 
+### OpenDarwin CC Tools
+ODCCTOOLS_URL="http://www.rkeene.org/devel/odcctools-${ODCCTOOLS_VERS}.tar.gz"
+ODCCTOOLS_TARBALL="src/odcctools-${ODCCTOOLS_VERS}.tar.gz"
+ODCCTOOLS_DIR="odcctools-${ODCCTOOLS_VERS}"
+
 ## Clean-up
 if [ "$1" = "clean" -o "$1" = "distclean" ]; then
-	rm -rf "${BINUTILS_DIR}" "${PCC_DIR}" "${PCC_LIBS_DIR}" "${GCC_DIR}" "${GMP_DIR}" "${MPFR_DIR}" "${MPC_DIR}"
+	rm -rf "${BINUTILS_DIR}" "${PCC_DIR}" "${PCC_LIBS_DIR}" "${GCC_DIR}" "${GMP_DIR}" "${MPFR_DIR}" "${MPC_DIR}" "${ODCCTOOLS_DIR}"
 
 	for platform in "${platforms[@]}"; do
 		rm -rf "gcc-${platform}"
@@ -144,7 +150,7 @@ if [ "$1" = "clean" -o "$1" = "distclean" ]; then
 fi
 
 if [ "$1" = "distclean" ]; then
-	rm -f "${BINUTILS_TARBALL}" "${PCC_TARBALL}" "${PCC_LIBS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}"
+	rm -f "${BINUTILS_TARBALL}" "${PCC_TARBALL}" "${PCC_LIBS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}" "${ODCCTOOLS_TARBALL}"
 
 	for appscript in scripts/*; do
 		"${appscript}" "distclean" >/dev/null 2>/dev/null
@@ -182,6 +188,8 @@ case "${CCNAME}" in
 esac
 
 ### Per OS
+use_gnu_ld='1'
+use_gnu_as='1'
 case "${CCNAME}" in
 	*-solaris2*)
 		use_multilib='1'
@@ -190,7 +198,19 @@ case "${CCNAME}" in
 		use_pcc='0'
 		use_multilib='1'
 		;;
+	*-darwin*)
+		use_gnu_ld='0'
+		use_gnu_as='0'
+		;;
 esac
+
+if [ "${use_gnu_ld}" = "1" ]; then
+	BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-gnu-ld"
+fi
+
+if [ "${use_gnu_as}" = "1" ]; then
+	BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-gnu-as"
+fi
 
 ## Determine platform file tarball
 PLATFORM_TARBALL="${BUILD_CC_PLATFORMDIR}/${CCNAME}-platform.tar.bz2"
@@ -227,6 +247,31 @@ if [ "${STAGE}" != "stage1" ]; then
 	STAGE="stage2"
 fi
 export STAGE
+
+## Compile OpenDarwin CC Tools for this platform, if needed
+(
+	if [ -f "${CCDIR}/bin/${CCNAME}-as" ]; then
+		exit 0
+	fi
+
+	if ! echo "${CCNAME}" | grep '[-]darwin' >/dev/null; then
+		exit 0
+	fi
+
+	rm -rf "${ODCCTOOLS_DIR}"
+
+	download "${ODCCTOOLS_URL}" "${ODCCTOOLS_TARBALL}"
+
+	gzip -dc "${ODCCTOOLS_TARBALL}" | tar -xf -
+
+	cd "${ODCCTOOLS_DIR}" || exit 1
+
+	./configure --target="${CCNAME}" --prefix="${CCDIR}" --enable-ld64
+
+	${MAKE} || exit 1
+
+	${MAKE} install || exit 1
+) || exit 1
 
 ## Compile binutils for this platform if needed
 (
@@ -346,14 +391,14 @@ fi
 	## Build GCC
 	if [ "${STAGE}" = "stage1" ]; then
 		### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} all-gcc all-target-libgcc || exit 1
 		${MAKE} install-gcc install-target-libgcc || exit 1
 
 	else
 		### Stage 2 -- the full compiler suite
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --with-gnu-ld --with-gnu-as --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} || exit 1
 		${MAKE} install || exit 1
