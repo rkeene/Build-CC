@@ -72,6 +72,34 @@ if [ "${have_64bit}" != "${want_64bit}" ]; then
 	fi
 fi
 
+if [ -z "${CC_FOR_BUILD}" -a -z "${HOST_CC}" ]; then
+	if [ -n "${CC}" ]; then
+		CC_FOR_BUILD="${CC}"
+	else
+		tmpfile="${TMPDIR:-/tmp}/setup-cc-find-cc-$$${RANDOM}${RANDOM}${RANDOM}"
+		rm -f "${tmpfile}.o" "${tmpfile}"
+
+		for try_cc in cc gcc c89 c99; do
+			try_cc="$(which "${try_cc}" 2>/dev/null)"
+
+			if [ ! -f "${try_cc}" ]; then
+				continue
+			fi
+
+			touch "${tmpfile}"
+			"${try_cc}" -o "${tmpfile}.o" -c "${tmpfile}" 2>/dev/null >/dev/null || continue
+
+			CC_FOR_BUILD="${try_cc}"
+
+			break
+		done
+
+		rm -f "${tmpfile}.o" "${tmpfile}"
+	fi
+elif [ -z "${CC_FOR_BUILD}" -a -n "${HOST_CC}" ]; then
+	CC_FOR_BUILD="${HOST_CC}"
+fi
+
 CCROOT="$(readlink -f "${CCROOT}")"
 echo "PATH='${CCROOT}/${CCNAME}/${CCNAME}/bin:${PATH}:${CCROOT}/${CCNAME}/bin';"
 echo "AR='${CCNAME}-ar';"
@@ -82,4 +110,6 @@ echo "LD='${CCNAME}-ld';"
 echo "NM='${CCNAME}-nm';"
 echo "RANLIB='${CCNAME}-ranlib';"
 echo "STRIP='${CCNAME}-strip';"
-echo 'export PATH AR AS CC CXX LD NM RANLIB STRIP;'
+echo "CC_FOR_BUILD='${CC_FOR_BUILD}';"
+echo "HOST_CC='${CC_FOR_BUILD}';"
+echo 'export PATH AR AS CC CXX LD NM RANLIB STRIP CC_FOR_BUILD HOST_CC;'
