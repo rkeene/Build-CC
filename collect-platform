@@ -63,6 +63,20 @@ if [ -z "${PLATFORM}" ]; then
 			esac
 			PLATFORM="${cpu_platform}-apple-darwin$(uname -r | cut -f 1 -d '.')"
 			;;
+		Linux)
+			libc=""
+			for testfile in /lib{,64}/libc-2.*.so; do
+				if [ ! -f "${testfile}" ]; then
+					continue
+				fi
+
+				libc="-gnu"
+
+				break
+			done
+
+			PLATFORM="$(uname -m)-unknown-linux${libc}"
+			;;
 	esac
 fi
 
@@ -104,6 +118,42 @@ case "${PLATFORM}" in
 		ln -s '.' "${PLATFORM_LIB}/32"
 
 		# Headers
+		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+		;;
+	*-linux*)
+		SRCLIB32='lib'
+		SRCLIB64=''
+
+		if [ -d '/usr/lib32' ]; then
+			SRCLIB32='lib32'
+		fi
+
+		if [ -d '/usr/lib64' ]; then
+			SRCLIB64='lib64'
+		elif [ -d '/usr/lib' -a -d '/usr/lib32' -a ! '/usr/lib' -ef '/usr/lib32' ]; then
+			SRCLIB64='lib'
+		fi
+
+		cp /usr/${SRCLIB32}/*.o "${PLATFORM_LIB}/"
+		cp /usr/${SRCLIB32}/lib*.so* "${PLATFORM_LIB}/"
+		cp /usr/${SRCLIB32}/lib*.a "${PLATFORM_LIB}/"
+		cp /${SRCLIB32}/*.o "${PLATFORM_LIB}/"
+		cp /${SRCLIB32}/lib*.so* "${PLATFORM_LIB}/"
+		cp /${SRCLIB32}/lib*.a "${PLATFORM_LIB}/"
+
+		if [ -n "${SRCLIB64}" ]; then
+			PLATFORM_LIB64="${PLATFORM_ROOT}/lib64"
+
+			mkdir -p "${PLATFORM_LIB64}"
+
+			cp /usr/${SRCLIB64}/*.o "${PLATFORM_LIB64}/"
+			cp /usr/${SRCLIB64}/lib*.so* "${PLATFORM_LIB64}/"
+			cp /usr/${SRCLIB64}/lib*.a "${PLATFORM_LIB64}/"
+			cp /${SRCLIB64}/*.o "${PLATFORM_LIB64}/"
+			cp /${SRCLIB64}/lib*.so* "${PLATFORM_LIB64}/"
+			cp /${SRCLIB64}/lib*.a "${PLATFORM_LIB64}/"
+		fi
+
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
 		;;
 	*-netbsd*)
