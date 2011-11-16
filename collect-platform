@@ -11,6 +11,11 @@ if [ -n "$1" ]; then
 fi
 
 if [ -z "${PLATFORM}" ]; then
+	# Determine platform from what GCC was compiled for if possible
+	PLATFORM="$(gcc -dumpmachine 2>/dev/null)"
+fi
+
+if [ -z "${PLATFORM}" ]; then
 	case "$(uname -s)" in
 		SunOS)
 			case "$(uname -r)" in
