@@ -82,6 +82,9 @@ if [ -z "${PLATFORM}" ]; then
 
 			PLATFORM="$(uname -m)-unknown-linux${libc}"
 			;;
+		AIX)
+			PLATFORM="$(uname -p)-ibm-aix-$(uname -v).$(uname -r)"
+			;;
 	esac
 fi
 
@@ -162,6 +165,19 @@ case "${PLATFORM}" in
 			cp /${SRCLIB64}/lib*.a "${PLATFORM_LIB64}/"
 			cp /${SRCLIB64}/ld-*.so* "${PLATFORM_LIB64}/"
 		fi
+
+		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+		;;
+	*-aix*)
+		cp /usr/lib/*.o "${PLATFORM_LIB}/"
+		cp /usr/lib/*.exp "${PLATFORM_LIB}/"
+		cp /usr/lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /usr/lib/lib*.a "${PLATFORM_LIB}/"
+
+		cp /lib/*.o "${PLATFORM_LIB}/"
+		cp /lib/*.exp "${PLATFORM_LIB}/"
+		cp /lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /lib/lib*.a "${PLATFORM_LIB}/"
 
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
 		;;
