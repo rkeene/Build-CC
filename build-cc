@@ -39,7 +39,7 @@ GCC_VERS='4.6.1'
 GMP_VERS='5.0.2'
 MPFR_VERS='3.0.1'
 MPC_VERS='0.9'
-ODCCTOOLS_VERS='622.3od16+2rsk'
+ODCCTOOLS_VERS='622.3od16+3rsk'
 
 # Start of script
 ## Initialize default values
@@ -191,6 +191,9 @@ esac
 
 ### Per OS
 case "${CCNAME}" in
+	*-linux*)
+		use_multilib='1'
+		;;
 	*-solaris2*)
 		use_multilib='1'
 		;;
@@ -199,9 +202,24 @@ case "${CCNAME}" in
 		use_multilib='1'
 		;;
 	*-darwin*)
+		use_multilib='1'
 		use_gnu_ld='0'
 		use_gnu_as='0'
-		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-ld=${CCDIR}/${CCNAME}/bin/ld --with-as=${CCDIR}/${CCNAME}/bin/as"
+		use_ld64='0'
+
+		if echo "${CCNAME}" | egrep '^(x86_64|ppc64)-' >/dev/null; then
+			use_ld64='1'
+		fi
+
+		if [ "${use_ld64}" = '0' ]; then
+			ldcmd='ld'
+		else
+			ldcmd='ld64'
+		fi
+
+		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-ld=${CCDIR}/${CCNAME}/bin/${ldcmd} --with-as=${CCDIR}/${CCNAME}/bin/as"
+
+		unset ldcmd
 		;;
 esac
 
@@ -267,7 +285,13 @@ export STAGE
 
 	cd "${ODCCTOOLS_DIR}" || exit 1
 
-	./configure --target="${CCNAME}" --prefix="${CCDIR}" --enable-ld64
+	if [ "${use_ld64}" = '1' ]; then
+		ld64enable='enable'
+	else
+		ld64enable='disable'
+	fi
+
+	./configure --target="${CCNAME}" --prefix="${CCDIR}" "--${ld64enable}-ld64"
 
 	${MAKE} || exit 1
 
