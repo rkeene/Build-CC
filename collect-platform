@@ -142,9 +142,11 @@ case "${PLATFORM}" in
 		cp /usr/${SRCLIB32}/*.o "${PLATFORM_LIB}/"
 		cp /usr/${SRCLIB32}/lib*.so* "${PLATFORM_LIB}/"
 		cp /usr/${SRCLIB32}/lib*.a "${PLATFORM_LIB}/"
+		cp /usr/${SRCLIB32}/ld-*.so* "${PLATFORM_LIB}/"
 		cp /${SRCLIB32}/*.o "${PLATFORM_LIB}/"
 		cp /${SRCLIB32}/lib*.so* "${PLATFORM_LIB}/"
 		cp /${SRCLIB32}/lib*.a "${PLATFORM_LIB}/"
+		cp /${SRCLIB32}/ld-*.so* "${PLATFORM_LIB}/"
 
 		if [ -n "${SRCLIB64}" ]; then
 			PLATFORM_LIB64="${PLATFORM_ROOT}/lib64"
@@ -154,9 +156,11 @@ case "${PLATFORM}" in
 			cp /usr/${SRCLIB64}/*.o "${PLATFORM_LIB64}/"
 			cp /usr/${SRCLIB64}/lib*.so* "${PLATFORM_LIB64}/"
 			cp /usr/${SRCLIB64}/lib*.a "${PLATFORM_LIB64}/"
+			cp /usr/${SRCLIB64}/ld-*.so* "${PLATFORM_LIB64}/"
 			cp /${SRCLIB64}/*.o "${PLATFORM_LIB64}/"
 			cp /${SRCLIB64}/lib*.so* "${PLATFORM_LIB64}/"
 			cp /${SRCLIB64}/lib*.a "${PLATFORM_LIB64}/"
+			cp /${SRCLIB64}/ld-*.so* "${PLATFORM_LIB64}/"
 		fi
 
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
