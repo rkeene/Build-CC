@@ -242,6 +242,11 @@ ADDONS_TARBALL="${BUILD_CC_PLATFORMDIR}/platform/${CCNAME}-addons.tar.bz2"
 
 	if [ -f "${PLATFORM_TARBALL}" ]; then
 		bzip2 -dc "${PLATFORM_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
+
+		if [ ! -e 'usr' ]; then
+			#### Create symlink so things like "./usr/include" work.
+			ln -s . usr
+		fi
 	fi
 
 	if [ -f "${ADDONS_TARBALL}" ]; then
@@ -324,7 +329,7 @@ export STAGE
 	mkdir "binutils-${CCNAME}"
 	cd "binutils-${CCNAME}" || exit -1
 
-	"../${BINUTILS_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls
+	"../${BINUTILS_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}"
 
 	${MAKE} || exit 1
 
@@ -426,14 +431,13 @@ fi
 	## Build GCC
 	if [ "${STAGE}" = "stage1" ]; then
 		### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} all-gcc all-target-libgcc || exit 1
 		${MAKE} install-gcc install-target-libgcc || exit 1
-
 	else
 		### Stage 2 -- the full compiler suite
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} || exit 1
 		${MAKE} install || exit 1
