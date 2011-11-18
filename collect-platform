@@ -98,9 +98,10 @@ fi
 PLATFORM_ROOT="/var/tmp/platform-$$${RANDOM}${RANDOM}${RANDOM}"
 PLATFORM_INCLUDE="${PLATFORM_ROOT}/include"
 PLATFORM_LIB="${PLATFORM_ROOT}/lib"
+PLATFORM_PKGCONFIG="${PLATFORM_ROOT}/lib/pkgconfig"
 
 rm -rf "${PLATFORM_ROOT}"
-mkdir -p "${PLATFORM_ROOT}" "${PLATFORM_LIB}" "${PLATFORM_INCLUDE}"
+mkdir -p "${PLATFORM_ROOT}" "${PLATFORM_LIB}" "${PLATFORM_INCLUDE}" "${PLATFORM_PKGCONFIG}"
 
 # 3. Collect header files
 case "${PLATFORM}" in
@@ -127,8 +128,14 @@ case "${PLATFORM}" in
 
 		# Headers
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+
+		# "pkgconfig"
+		mkdir "${PLATFORM_LIB}/64/pkgconfig"
+		cp /usr/lib/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		cp /usr/lib/64/pkgconfig/*.pc "${PLATFORM_LIB}/64/pkgconfig/"
 		;;
 	*-linux*)
+		# Libraries
 		SRCLIB32='lib'
 		SRCLIB64=''
 
@@ -153,8 +160,9 @@ case "${PLATFORM}" in
 
 		if [ -n "${SRCLIB64}" ]; then
 			PLATFORM_LIB64="${PLATFORM_ROOT}/lib64"
+			PLATFORM_PKGCONFIG64="${PLATFORM_LIB64}/pkgconfig"
 
-			mkdir -p "${PLATFORM_LIB64}"
+			mkdir -p "${PLATFORM_LIB64}" "${PLATFORM_PKGCONFIG64}"
 
 			cp /usr/${SRCLIB64}/*.o "${PLATFORM_LIB64}/"
 			cp /usr/${SRCLIB64}/lib*.so* "${PLATFORM_LIB64}/"
@@ -168,9 +176,19 @@ case "${PLATFORM}" in
 			echo 0 > "${PLATFORM_ROOT}/multilib"
 		fi
 
+		# Headers
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+
+		# "pkgconfig"
+		cp /usr/${SRCLIB32}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		cp /${SRCLIB32}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		if [ -n "${SRCLIB64}" ]; then
+			cp /usr/${SRCLIB64}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG64}/"
+			cp /${SRCLIB64}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG64}/"
+		fi
 		;;
 	*-aix*)
+		# Libraries
 		cp /usr/lib/*.o "${PLATFORM_LIB}/"
 		cp /usr/lib/*.exp "${PLATFORM_LIB}/"
 		cp /usr/lib/lib*.so* "${PLATFORM_LIB}/"
@@ -181,6 +199,7 @@ case "${PLATFORM}" in
 		cp /lib/lib*.so* "${PLATFORM_LIB}/"
 		cp /lib/lib*.a "${PLATFORM_LIB}/"
 
+		# Headers
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
 		;;
 	*-netbsd*)
@@ -204,10 +223,16 @@ case "${PLATFORM}" in
 				continue
 			fi
 
-			mkdir "${PLATFORM_LIB}/${subarch}"
-			cp "${subarchdir}"/*.o "${PLATFORM_LIB}/${subarch}/"
-			cp "${subarchdir}"/lib*.so "${PLATFORM_LIB}/${subarch}/"
-			cp "${subarchdir}"/lib*.a "${PLATFORM_LIB}/${subarch}/"
+			platform_subarchdir="${PLATFORM_LIB}/${subarch}"
+
+			mkdir "${platform_subarchdir}"
+			cp "${subarchdir}"/*.o "${platform_subarchdir}/"
+			cp "${subarchdir}"/lib*.so "${platform_subarchdir}/"
+			cp "${subarchdir}"/lib*.a "${platform_subarchdir}/"
+
+			platform_subarchpkgcfgdir="${platform_subarchdir}/pkgconfig"
+			mkdir -p "${platform_subarchpkgcfgdir}"
+			cp "${subarchdir}"/pkgconfig/*.pc "${platform_subarchpkgcfgdir}/"
 
 			echo 1 > "${PLATFORM_ROOT}/multilib"
 		done
@@ -225,6 +250,9 @@ case "${PLATFORM}" in
 		# Headers
 		cp -rp /usr/${xdir}/include/* "${PLATFORM_INCLUDE}/"
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+
+		# "pkgconfig"
+		cp /usr/lib/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
 		;;
 	*-hpux11*)
 		# Libraries
@@ -364,6 +392,11 @@ case "${PLATFORM}" in
 		# Headers
 		cp -rp /usr/local/include/* "${PLATFORM_INCLUDE}/"
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+
+		# "pkgconfig"
+		cp /usr/local/lib/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		cp /usr/lib/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		cp /lib/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
 
 		# Disable multilib since we only collected one platform
 		echo 0 > "${PLATFORM_ROOT}/multilib"
