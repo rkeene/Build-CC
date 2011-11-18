@@ -186,9 +186,11 @@ esac
 ### Per OS
 case "${CCNAME}" in
 	*-hpux*)
+		#### Default to disabling multilib, will be re-enabled by target if supported
 		use_multilib='0'
 		;;
 	*-freebsd*)
+		#### Default to disabling multilib, will be re-enabled by target if supported
 		use_multilib='0'
 		;;
 	*-netbsd5*)
@@ -270,6 +272,7 @@ if [ "${STAGE}" != "stage1" ]; then
 fi
 export STAGE
 
+### Do pre-compilation steps
 for prescript in scripts/pre/*; do
 	if [ ! -x "${prescript}" ]; then
 		continue
