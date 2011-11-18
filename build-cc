@@ -34,7 +34,6 @@ fi
 
 # Tool versions
 BINUTILS_VERS='2.21.1'
-PCC_VERS='1.0.0'
 GCC_VERS='4.6.1'
 GMP_VERS='5.0.2'
 MPFR_VERS='3.0.1'
@@ -42,7 +41,6 @@ MPC_VERS='0.9'
 
 # Start of script
 ## Initialize default values
-use_pcc='0'
 use_multilib='1'
 use_gnu_ld='1'
 use_gnu_as='1'
@@ -98,15 +96,6 @@ BINUTILS_URL="http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERS}.tar.gz"
 BINUTILS_TARBALL="src/binutils-${BINUTILS_VERS}.tar.gz"
 BINUTILS_DIR="binutils-${BINUTILS_VERS}"
 
-### PCC
-PCC_URL="http://pcc.ludd.ltu.se/ftp/pub/pcc-releases/pcc-${PCC_VERS}.tgz"
-PCC_TARBALL="src/pcc-${PCC_VERS}.tar.gz"
-PCC_DIR="pcc-${PCC_VERS}"
-
-PCC_LIBS_URL="http://pcc.ludd.ltu.se/ftp/pub/pcc-releases/pcc-libs-${PCC_VERS}.tgz"
-PCC_LIBS_TARBALL="src/pcc-libs-${PCC_VERS}.tar.gz"
-PCC_LIBS_DIR="pcc-libs-${PCC_VERS}"
-
 ### GCC
 GCC_URL="http://mirrors-us.seosue.com/gcc/releases/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.gz"
 GCC_TARBALL="src/gcc-${GCC_VERS}.tar.gz"
@@ -129,7 +118,7 @@ MPC_DIR="mpc-${MPC_VERS}"
 
 ## Clean-up
 if [ "$1" = "clean" -o "$1" = "distclean" ]; then
-	rm -rf "${BINUTILS_DIR}" "${PCC_DIR}" "${PCC_LIBS_DIR}" "${GCC_DIR}" "${GMP_DIR}" "${MPFR_DIR}" "${MPC_DIR}"
+	rm -rf "${BINUTILS_DIR}" "${GCC_DIR}" "${GMP_DIR}" "${MPFR_DIR}" "${MPC_DIR}"
 
 	for platform in "${platforms[@]}"; do
 		rm -rf "gcc-${platform}"
@@ -146,7 +135,7 @@ if [ "$1" = "clean" -o "$1" = "distclean" ]; then
 fi
 
 if [ "$1" = "distclean" ]; then
-	rm -f "${BINUTILS_TARBALL}" "${PCC_TARBALL}" "${PCC_LIBS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}"
+	rm -f "${BINUTILS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}"
 
 	for appscript in scripts/* scripts/pre/* scripts/post/*; do
 		"${appscript}" "distclean" >/dev/null 2>/dev/null
@@ -175,12 +164,6 @@ case "${CCNAME}" in
 	hppa64-*|hppa1*-)
 		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --disable-libquadmath"
 		;;
-	i386-*)
-		use_pcc='1'
-		;;
-	x86_64-*)
-		use_pcc='1'
-		;;
 esac
 
 ### Per OS
@@ -192,9 +175,6 @@ case "${CCNAME}" in
 	*-freebsd*)
 		#### Default to disabling multilib, will be re-enabled by target if supported
 		use_multilib='0'
-		;;
-	*-netbsd5*)
-		use_pcc='0'
 		;;
 	*-darwin*)
 		use_gnu_ld='0'
@@ -313,7 +293,7 @@ done
 ) || exit 1
 rm -rf "binutils-${CCNAME}"
 
-## Compile C compiler (PCC or GCC) if needed
+## Compile C compiler (GCC) if needed
 ### Prepare GCC fix-ups (stage1)
 if [ "${STAGE}" = "stage1" ]; then
 	### XXX: GCC produces a broken compiler -- compiles require libgcc_eh.a, which it doesn't emit
@@ -438,81 +418,6 @@ if [ "${retval}" != "2" -a "${retval}" != "0" ]; then
 	exit 1
 fi
 rm -rf "gcc-${CCNAME}"
-
-### Install PCC
-(
-	#### Stage 2 only
-	if [ "${STAGE}" != "stage2" ]; then
-		exit 0
-	fi
-
-	#### Only if requested
-	if [ "${use_pcc}" != "1" ]; then
-		exit 0
-	fi
-
-	#### Only if not already installed
-	if [ -f "${CCDIR}/bin/${CCNAME}-pcc" ]; then
-		exit 0
-	fi
-
-	download "${PCC_URL}" "${PCC_TARBALL}"
-
-	rm -rf "${PCC_DIR}"
-	gzip -dc "${PCC_TARBALL}" | tar -xf -
-
-	cd "${PCC_DIR}" || exit 1
-
-	### PCC does not work with parallel make
-	MAKE="${MAKE_SINGLE}"
-
-	./configure --target="${CCNAME}" --prefix="${CCDIR}" --enable-tls
-
-	${MAKE} || exit 1
-
-	${MAKE} install || exit 1
-) || exit 1
-
-(
-	#### Stage 2 only
-	if [ "${STAGE}" != "stage2" ]; then
-		exit 0
-	fi
-
-	#### Only if requested
-	if [ "${use_pcc}" != "1" ]; then
-		exit 0
-	fi
-
-	#### Only if not already installed
-	if find "${CCDIR}/lib/pcc/${CCNAME}" -name libpcc.a -type f | grep libpcc >/dev/null; then
-		exit 0
-	fi
-
-	#### Build with newly built cross-compiler
-	PATH="${PATH}:${CCDIR}/bin"
-	CC="${CCNAME}-pcc"
-	AR="${CCNAME}-ar"
-	STRIP="${CCNAME}-strip"
-	RANLIB="${CCNAME}-ranlib"
-	export PATH CC AR STRIP RANLIB
-
-	download "${PCC_LIBS_URL}" "${PCC_LIBS_TARBALL}"
-
-	rm -rf "${PCC_LIBS_DIR}"
-	gzip -dc "${PCC_LIBS_TARBALL}" | tar -xf -
-
-	cd "${PCC_LIBS_DIR}" || exit 1
-
-	#### PCC does not work with parallel make
-	MAKE="${MAKE_SINGLE}"
-
-	./configure --host="${CCNAME}" --prefix="${CCDIR}"
-
-	${MAKE} || exit 1
-
-	${MAKE} install || exit 1
-) || exit 1
 
 ## Install libraries for this platform
 for appscript in scripts/* scripts/post/*; do
