@@ -1,0 +1,65 @@
+#! /bin/bash
+
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+SOURCEFILE="$5"
+
+### OpenDarwin CC Tools
+ODCCTOOLS_VERS='622.3od16+3rsk'
+ODCCTOOLS_URL="http://www.rkeene.org/devel/odcctools-${ODCCTOOLS_VERS}.tar.gz"
+ODCCTOOLS_TARBALL="src/odcctools-${ODCCTOOLS_VERS}.tar.gz"
+ODCCTOOLS_DIR="odcctools-${ODCCTOOLS_VERS}"
+
+if [ "${CCNAME}" = "clean" -o "${CCNAME}" = "distclean" ]; then
+	rm -rf "${ODCCTOOLS_DIR}"
+
+	if [ "${CCNAME}" = "distclean" ]; then
+		rm -f "${ODCCTOOLS_TARBALL}"
+	fi
+
+	exit 0
+fi
+
+if [ -f "${CCDIR}/bin/${CCNAME}-as" ]; then
+	exit 0
+fi
+
+if ! echo "${CCNAME}" | grep '[-]darwin' >/dev/null; then
+	exit 0
+fi
+
+. 'scripts/common'
+
+rm -rf "${ODCCTOOLS_DIR}"
+
+download "${ODCCTOOLS_URL}" "${ODCCTOOLS_TARBALL}"
+
+gzip -dc "${ODCCTOOLS_TARBALL}" | tar -xf -
+
+cd "${ODCCTOOLS_DIR}" || exit 1
+
+if [ "${use_ld64}" = '1' ]; then
+	ld64enable='enable'
+else
+	ld64enable='disable'
+fi
+
+./configure --target="${CCNAME}" --prefix="${CCDIR}" "--${ld64enable}-ld64"
+
+${MAKE} || exit 1
+
+${MAKE} install || exit 1
+
+mkdir -p "${CCDIR}/${CCNAME}/bin"
+(
+	cd "${CCDIR}/${CCNAME}/bin" || exit 1
+
+	for src in ../../bin/${CCNAME}-*; do
+		dest="$(echo "${src}" | sed "s@^.*/${CCNAME}-@@")"
+		ln -s "${src}" "${dest}"
+	done
+)
+
+exit 0

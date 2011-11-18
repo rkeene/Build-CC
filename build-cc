@@ -39,7 +39,6 @@ GCC_VERS='4.6.1'
 GMP_VERS='5.0.2'
 MPFR_VERS='3.0.1'
 MPC_VERS='0.9'
-ODCCTOOLS_VERS='622.3od16+3rsk'
 
 # Start of script
 ## Initialize default values
@@ -128,21 +127,16 @@ MPC_URL="http://www.multiprecision.org/mpc/download/mpc-${MPC_VERS}.tar.gz"
 MPC_TARBALL="src/mpc-${MPC_VERS}.tar.gz"
 MPC_DIR="mpc-${MPC_VERS}"
 
-### OpenDarwin CC Tools
-ODCCTOOLS_URL="http://www.rkeene.org/devel/odcctools-${ODCCTOOLS_VERS}.tar.gz"
-ODCCTOOLS_TARBALL="src/odcctools-${ODCCTOOLS_VERS}.tar.gz"
-ODCCTOOLS_DIR="odcctools-${ODCCTOOLS_VERS}"
-
 ## Clean-up
 if [ "$1" = "clean" -o "$1" = "distclean" ]; then
-	rm -rf "${BINUTILS_DIR}" "${PCC_DIR}" "${PCC_LIBS_DIR}" "${GCC_DIR}" "${GMP_DIR}" "${MPFR_DIR}" "${MPC_DIR}" "${ODCCTOOLS_DIR}"
+	rm -rf "${BINUTILS_DIR}" "${PCC_DIR}" "${PCC_LIBS_DIR}" "${GCC_DIR}" "${GMP_DIR}" "${MPFR_DIR}" "${MPC_DIR}"
 
 	for platform in "${platforms[@]}"; do
 		rm -rf "gcc-${platform}"
 		rm -rf "binutils-${platform}"
 	done
 
-	for appscript in scripts/*; do
+	for appscript in scripts/* scripts/pre/* scripts/post/*; do
 		"${appscript}" "clean" >/dev/null 2>/dev/null
 	done
 
@@ -152,9 +146,9 @@ if [ "$1" = "clean" -o "$1" = "distclean" ]; then
 fi
 
 if [ "$1" = "distclean" ]; then
-	rm -f "${BINUTILS_TARBALL}" "${PCC_TARBALL}" "${PCC_LIBS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}" "${ODCCTOOLS_TARBALL}"
+	rm -f "${BINUTILS_TARBALL}" "${PCC_TARBALL}" "${PCC_LIBS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}"
 
-	for appscript in scripts/*; do
+	for appscript in scripts/* scripts/pre/* scripts/post/*; do
 		"${appscript}" "distclean" >/dev/null 2>/dev/null
 	done
 
@@ -276,46 +270,21 @@ if [ "${STAGE}" != "stage1" ]; then
 fi
 export STAGE
 
-## Compile OpenDarwin CC Tools for this platform, if needed
-(
-	if [ -f "${CCDIR}/bin/${CCNAME}-as" ]; then
-		exit 0
+for prescript in scripts/pre/*; do
+	if [ ! -x "${prescript}" ]; then
+		continue
 	fi
 
-	if ! echo "${CCNAME}" | grep '[-]darwin' >/dev/null; then
-		exit 0
+	sourcefile="${TMPDIR:-/tmp}/build-cc-sourcefile-$$${RANDOM}${RANDOM}${RANDOM}"
+	rm -f "${sourcefile}"
+
+	"${prescript}" "${CCNAME}" "${CCDIR}" "${CCDIR}/${CCNAME}" "${STAGE}" "${sourcefile}" || exit 1
+
+	if [ -f "${sourcefile}" ]; then
+		. "${sourcefile}"
+		rm -f "${sourcefile}"
 	fi
-
-	rm -rf "${ODCCTOOLS_DIR}"
-
-	download "${ODCCTOOLS_URL}" "${ODCCTOOLS_TARBALL}"
-
-	gzip -dc "${ODCCTOOLS_TARBALL}" | tar -xf -
-
-	cd "${ODCCTOOLS_DIR}" || exit 1
-
-	if [ "${use_ld64}" = '1' ]; then
-		ld64enable='enable'
-	else
-		ld64enable='disable'
-	fi
-
-	./configure --target="${CCNAME}" --prefix="${CCDIR}" "--${ld64enable}-ld64"
-
-	${MAKE} || exit 1
-
-	${MAKE} install || exit 1
-
-	mkdir -p "${CCDIR}/${CCNAME}/bin"
-	(
-		cd "${CCDIR}/${CCNAME}/bin" || exit 1
-
-		for src in ../../bin/${CCNAME}-*; do
-			dest="$(echo "${src}" | sed "s@^.*/${CCNAME}-@@")"
-			ln -s "${src}" "${dest}"
-		done
-	)
-) || exit 1
+done
 
 ## Compile binutils for this platform if needed
 (
@@ -543,12 +512,12 @@ rm -rf "gcc-${CCNAME}"
 ) || exit 1
 
 ## Install libraries for this platform
-for appscript in scripts/*; do
+for appscript in scripts/* scripts/post/*; do
 	if echo "${appscripts}" | grep '/common$' >/dev/null; then
 		continue
 	fi
 
-	if [ ! -x "${appscript}" ]; then
+	if [ ! -f "${appscript}" -o ! -x "${appscript}" ]; then
 		continue
 	fi
 
