@@ -164,6 +164,8 @@ case "${PLATFORM}" in
 			cp /${SRCLIB64}/lib*.so* "${PLATFORM_LIB64}/"
 			cp /${SRCLIB64}/lib*.a "${PLATFORM_LIB64}/"
 			cp /${SRCLIB64}/ld-*.so* "${PLATFORM_LIB64}/"
+		else
+			echo 0 > "${PLATFORM_ROOT}/multilib"
 		fi
 
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
@@ -195,6 +197,7 @@ case "${PLATFORM}" in
 		done
 
 		## Determine sub-archs
+		echo 0 > "${PLATFORM_ROOT}/multilib"
 		for subarch in i386 sparc; do
 			subarchdir="/usr/lib/${subarch}"
 			if [ ! -d "${subarchdir}" ]; then
@@ -205,6 +208,8 @@ case "${PLATFORM}" in
 			cp "${subarchdir}"/*.o "${PLATFORM_LIB}/${subarch}/"
 			cp "${subarchdir}"/lib*.so "${PLATFORM_LIB}/${subarch}/"
 			cp "${subarchdir}"/lib*.a "${PLATFORM_LIB}/${subarch}/"
+
+			echo 1 > "${PLATFORM_ROOT}/multilib"
 		done
 
 		cp /usr/${xdir}/lib/lib*.so* "${PLATFORM_LIB}/"
@@ -236,6 +241,8 @@ case "${PLATFORM}" in
 				cp /usr/lib/X11R6/pa20_64/lib*.sl "${PLATFORM_LIB}"
 				cp /usr/lib/X11R6/pa20_64/*.a "${PLATFORM_LIB}"
 			fi
+
+			echo 0 > "${PLATFORM_ROOT}/multilib"
 		else
 			cp /usr/lib/*.o "${PLATFORM_LIB}"
 
@@ -357,6 +364,9 @@ case "${PLATFORM}" in
 		# Headers
 		cp -rp /usr/local/include/* "${PLATFORM_INCLUDE}/"
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
+
+		# Disable multilib since we only collected one platform
+		echo 0 > "${PLATFORM_ROOT}/multilib"
 		;;
 esac
 
