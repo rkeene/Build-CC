@@ -247,6 +247,10 @@ case "${PLATFORM}" in
 		cp /lib/lib*.so* "${PLATFORM_LIB}/"
 		cp /lib/lib*.a "${PLATFORM_LIB}/"
 
+		# Shared object loader
+		mkdir -p "${PLATFORM_ROOT}/libexec/"
+		cp /usr/libexec/ld.elf_so "${PLATFORM_ROOT}/libexec/"
+
 		# Headers
 		cp -rp /usr/${xdir}/include/* "${PLATFORM_INCLUDE}/"
 		cp -rp /usr/include/* "${PLATFORM_INCLUDE}/"
