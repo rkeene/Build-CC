@@ -113,6 +113,8 @@ case "${PLATFORM}" in
 		cp /lib/64/lib*.a "${PLATFORM_LIB}/64/"
 		cp /usr/lib/64/lib*.so* "${PLATFORM_LIB}/64/"
 		cp /usr/lib/64/lib*.a "${PLATFORM_LIB}/64/"
+		cp /usr/sfw/lib/64/lib*.so* "${PLATFORM_LIB}/64/"
+		cp /usr/sfw/lib/64/*.a "${PLATFORM_LIB}/64/"
 		if echo "${PLATFORM}" | grep '^sparc' >/dev/null; then
 			ln -s '64' "${PLATFORM_LIB}/sparcv9"
 		else
@@ -124,6 +126,8 @@ case "${PLATFORM}" in
 		cp /lib/lib*.a "${PLATFORM_LIB}/"
 		cp /usr/lib/lib*.so* "${PLATFORM_LIB}/"
 		cp /usr/lib/lib*.a "${PLATFORM_LIB}/"
+		cp /usr/sfw/lib/lib*.so* "${PLATFORM_LIB}/"
+		cp /usr/sfw/lib/*.a "${PLATFORM_LIB}/"
 		ln -s '.' "${PLATFORM_LIB}/32"
 
 		# Headers
@@ -132,7 +136,9 @@ case "${PLATFORM}" in
 		# "pkgconfig"
 		mkdir "${PLATFORM_LIB}/64/pkgconfig"
 		cp /usr/lib/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		cp /usr/sfw/lib/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
 		cp /usr/lib/64/pkgconfig/*.pc "${PLATFORM_LIB}/64/pkgconfig/"
+		cp /usr/sfw/lib/64/pkgconfig/*.pc "${PLATFORM_LIB}/64/pkgconfig/"
 		;;
 	*-linux*)
 		# Libraries
@@ -204,6 +210,8 @@ case "${PLATFORM}" in
 		;;
 	*-netbsd*)
 		# Libraries
+		mkdir -p "${PLATFORM_ROOT}/libexec/"
+
 		## Determine the X11 sub-directory
 		for xdir in X11R7 X11R6 __fail__; do
 			if [ -d "/usr/${xdir}/lib" ]; then
@@ -229,6 +237,7 @@ case "${PLATFORM}" in
 			cp "${subarchdir}"/*.o "${platform_subarchdir}/"
 			cp "${subarchdir}"/lib*.so "${platform_subarchdir}/"
 			cp "${subarchdir}"/lib*.a "${platform_subarchdir}/"
+			cp "/usr/libexec/ld.elf_so-${subarch}" "${PLATFORM_ROOT}/libexec/"
 
 			platform_subarchpkgcfgdir="${platform_subarchdir}/pkgconfig"
 			mkdir -p "${platform_subarchpkgcfgdir}"
@@ -248,7 +257,6 @@ case "${PLATFORM}" in
 		cp /lib/lib*.a "${PLATFORM_LIB}/"
 
 		# Shared object loader
-		mkdir -p "${PLATFORM_ROOT}/libexec/"
 		cp /usr/libexec/ld.elf_so "${PLATFORM_ROOT}/libexec/"
 
 		# Headers
@@ -376,6 +384,8 @@ case "${PLATFORM}" in
 		case "${PLATFORM}" in
 			*-freebsd*)
 				# FreeBSD is generic, non-multilib
+				mkdir -p "${PLATFORM_ROOT}/libexec"
+				cp /libexec/ld-elf.so* "${PLATFORM_ROOT}/libexec/"
 				;;
 			*)
 				echo 'WARNING: Unknown system type, using generic collection' >&2
