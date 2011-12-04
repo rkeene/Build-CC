@@ -114,7 +114,7 @@ case "${PLATFORM}" in
 		cp /usr/lib/64/lib*.so* "${PLATFORM_LIB}/64/"
 		cp /usr/lib/64/lib*.a "${PLATFORM_LIB}/64/"
 		cp /usr/sfw/lib/64/lib*.so* "${PLATFORM_LIB}/64/"
-		cp /usr/sfw/lib/64/*.a "${PLATFORM_LIB}/64/"
+		cp /usr/sfw/lib/64/lib*.a "${PLATFORM_LIB}/64/"
 		if echo "${PLATFORM}" | grep '^sparc' >/dev/null; then
 			ln -s '64' "${PLATFORM_LIB}/sparcv9"
 		else
@@ -127,7 +127,7 @@ case "${PLATFORM}" in
 		cp /usr/lib/lib*.so* "${PLATFORM_LIB}/"
 		cp /usr/lib/lib*.a "${PLATFORM_LIB}/"
 		cp /usr/sfw/lib/lib*.so* "${PLATFORM_LIB}/"
-		cp /usr/sfw/lib/*.a "${PLATFORM_LIB}/"
+		cp /usr/sfw/lib/lib*.a "${PLATFORM_LIB}/"
 		ln -s '.' "${PLATFORM_LIB}/32"
 
 		# Headers
