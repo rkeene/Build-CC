@@ -1,0 +1,9 @@
+                                @@UTIL@@ @@VERS@@
+
+Release information:
+  pkg:  @@UTIL@@ version @@VERS@@
+  web:  http://build-cc.rkeene.org/
+  url:  http://www.rkeene.org/devel/@@UTIL@@-@@VERS@@.tar.gz
+ date:  @@DATE@@
+--------------------------------------------------------------------------
+
