@@ -220,11 +220,11 @@ ADDONS_TARBALL="${BUILD_CC_PLATFORMDIR}/platform/${CCNAME}-addons.tar.bz2"
 	fi
 
 	if [ -f "${PLATFORM_TARBALL}" ]; then
-		bzip2 -dc "${PLATFORM_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
+		bzip2 -dc "${PLATFORM_TARBALL}" | "${TAR:-tar}" --keep-old-files -xf - >/dev/null 2>/dev/null
 	fi
 
 	if [ -f "${ADDONS_TARBALL}" ]; then
-		bzip2 -dc "${ADDONS_TARBALL}" | tar --keep-old-files -xf - >/dev/null 2>/dev/null
+		bzip2 -dc "${ADDONS_TARBALL}" | "${TAR:-tar}" --keep-old-files -xf - >/dev/null 2>/dev/null
 	fi
 )
 
@@ -349,20 +349,8 @@ fi
 	fi
 
 	# Apply patches
-	## Reverse existing patches
-	cat "${GCC_DIR}/BUILD-CC_PATCHES_APPLIED" 2>/dev/null | while read patchfile; do
-		(
-			cd "${GCC_DIR}" || exit 1
-
-			echo " * Un-applying patch ${patchfile}"
-
-			patch --reverse -p1 < "${patchfile}"
-		)
-	done
-	rm -f "${GCC_DIR}/BUILD-CC_PATCHES_APPLIED"
-
 	## Apply host-specific patches
-	for patchfile in "$(pwd)/patches/all/gcc"/*.diff "$(pwd)/patches/${CCNAME}/gcc"/*.diff; do
+	for patchfile in "$(pwd)/patches/gcc"/*.diff; do
 		if [ ! -f "${patchfile}" ]; then
 			continue
 		fi
@@ -372,9 +360,7 @@ fi
 
 			cd "${GCC_DIR}" || exit 1
 
-			patch -p1 < "${patchfile}" || exit 1
-
-			echo "${patchfile}" >> 'BUILD-CC_PATCHES_APPLIED'
+			"${PATCH:-patch}" -p1 < "${patchfile}" || exit 1
 		) || exit 1
 	done
 
