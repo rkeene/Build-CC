@@ -33,8 +33,8 @@ if [ -f "build-cc.conf" ]; then
 fi
 
 # Tool versions
-BINUTILS_VERS='2.21.1'
-GCC_VERS='4.6.1'
+BINUTILS_VERS='2.22'
+GCC_VERS='4.6.2'
 GMP_VERS='5.0.2'
 MPFR_VERS='3.0.1'
 MPC_VERS='0.9'
@@ -92,23 +92,23 @@ fi
 
 ## URLs
 ### Binutils
-BINUTILS_URL="http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERS}.tar.gz"
-BINUTILS_TARBALL="src/binutils-${BINUTILS_VERS}.tar.gz"
+BINUTILS_URL="http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERS}.tar.bz2"
+BINUTILS_TARBALL="src/binutils-${BINUTILS_VERS}.tar.bz2"
 BINUTILS_DIR="binutils-${BINUTILS_VERS}"
 
 ### GCC
-GCC_URL="http://mirrors-us.seosue.com/gcc/releases/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.gz"
-GCC_TARBALL="src/gcc-${GCC_VERS}.tar.gz"
+GCC_URL="http://mirrors-us.seosue.com/gcc/releases/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.bz2"
+GCC_TARBALL="src/gcc-${GCC_VERS}.tar.bz2"
 GCC_DIR="gcc-${GCC_VERS}"
 
 ### GMP
-GMP_URL="http://ftp.gnu.org/gnu/gmp/gmp-${GMP_VERS}.tar.gz"
-GMP_TARBALL="src/gmp-${GMP_VERS}.tar.gz"
+GMP_URL="http://ftp.gnu.org/gnu/gmp/gmp-${GMP_VERS}.tar.bz2"
+GMP_TARBALL="src/gmp-${GMP_VERS}.tar.bz2"
 GMP_DIR="gmp-${GMP_VERS}"
 
 ### MPFR
-MPFR_URL="http://www.mpfr.org/mpfr-${MPFR_VERS}/mpfr-${MPFR_VERS}.tar.gz"
-MPFR_TARBALL="src/mpfr-${MPFR_VERS}.tar.gz"
+MPFR_URL="http://www.mpfr.org/mpfr-${MPFR_VERS}/mpfr-${MPFR_VERS}.tar.bz2"
+MPFR_TARBALL="src/mpfr-${MPFR_VERS}.tar.bz2"
 MPFR_DIR="mpfr-${MPFR_VERS}"
 
 ### MPC
@@ -278,7 +278,7 @@ done
 	if [ ! -d "${BINUTILS_DIR}" ]; then
 		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}"
 
-		gzip -dc "${BINUTILS_TARBALL}" | tar -xf -
+		bzip2 -dc "${BINUTILS_TARBALL}" | tar -xf -
 	fi
 
 	rm -rf "binutils-${CCNAME}"
@@ -333,10 +333,10 @@ fi
 		download "${MPC_URL}" "${MPC_TARBALL}"
 
 		# Extract sources
-		gzip -dc "${GCC_TARBALL}" | tar -xf -
-		gzip -dc "${GMP_TARBALL}" | tar -xf -
-		gzip -dc "${MPFR_TARBALL}" | tar -xf -
-		gzip -dc "${MPC_TARBALL}" | tar -xf -
+		bzip2 -dc "${GCC_TARBALL}" | "${TAR:-tar}" -xf -
+		bzip2 -dc "${GMP_TARBALL}" | "${TAR:-tar}" -xf -
+		bzip2 -dc "${MPFR_TARBALL}" | "${TAR:-tar}" -xf -
+		gzip -dc "${MPC_TARBALL}" | "${TAR:-tar}" -xf -
 
 		# Arroung sources as needed
 		rm -rf "${GCC_DIR}/gmp"
@@ -346,23 +346,41 @@ fi
 		mv "${GMP_DIR}" "${GCC_DIR}/gmp"
 		mv "${MPFR_DIR}" "${GCC_DIR}/mpfr"
 		mv "${MPC_DIR}" "${GCC_DIR}/mpc"
+
+		# Apply patches
+		## Apply patch files
+		for patchfile in "$(pwd)/patches/gcc"/*.diff; do
+			if [ ! -f "${patchfile}" ]; then
+				continue
+			fi
+
+			(
+				echo " * Applying patch ${patchfile}"
+
+				cd "${GCC_DIR}" || exit 1
+
+				"${PATCH:-patch}" -p1 < "${patchfile}" || exit 1
+			) || exit 1
+		done
+
+		## Apply patch scripts
+		export GCC_DIR
+		for gccscript in scripts/gcc/*; do
+			if [ ! -x "${gccscript}" ]; then
+				continue
+			fi
+
+			sourcefile="${TMPDIR:-/tmp}/build-cc-sourcefile-$$${RANDOM}${RANDOM}${RANDOM}"
+			rm -f "${sourcefile}"
+
+			"${gccscript}" "${CCNAME}" "${CCDIR}" "${CCDIR}/${CCNAME}" "${STAGE}" "${sourcefile}" || exit 1
+
+			if [ -f "${sourcefile}" ]; then
+				. "${sourcefile}"
+				rm -f "${sourcefile}"
+			fi
+		done
 	fi
-
-	# Apply patches
-	## Apply host-specific patches
-	for patchfile in "$(pwd)/patches/gcc"/*.diff; do
-		if [ ! -f "${patchfile}" ]; then
-			continue
-		fi
-
-		(
-			echo " * Applying patch ${patchfile}"
-
-			cd "${GCC_DIR}" || exit 1
-
-			"${PATCH:-patch}" -p1 < "${patchfile}" || exit 1
-		) || exit 1
-	done
 
 	# Build GCC with shared object support
 	## Create build directory
