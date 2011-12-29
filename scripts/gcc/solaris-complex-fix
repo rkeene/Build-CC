@@ -1,0 +1,13 @@
+#! /bin/bash
+
+if [ "$(uname -s)" != "SunOS" ]; then
+	exit 0
+fi
+
+if ${CC:-gcc} --version 2>/dev/null | grep 'gcc .* 3\.' >/dev/null; then
+	sed 's@complex\.h@__complex.h@g' "${GCC_DIR}/mpc/configure" > "${GCC_DIR}/mpc/configure.new"
+	cat "${GCC_DIR}/mpc/configure.new" > "${GCC_DIR}/mpc/configure"
+	rm -f "${GCC_DIR}/mpc/configure.new"
+fi
+
+exit 0
