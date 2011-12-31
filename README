@@ -1,1 +1,48 @@
-Simple Cross Compiler build script
+Simple Cross Compiler build script.
+
+Tools Included:
+	collect-platform:
+		Collects platform-specific files (such as headers and
+		libraries) required to build a usable cross-compilation
+		environment.  It is intended to be run on a system that
+		represents the platform you wish to build a cross compiler
+		for.  The "platform file", which will be named
+		"<platformname>-platform.tar.bz2" should be copied to the host
+		where you would like to build the cross compiler, in the
+		"platforms" sub-directory of "build-cc".
+
+	build-cc:
+		Builds the cross-compiler.  Running it with no arguments
+		lists the available platforms.  Running it with one argument
+		builds a cross-compiler for that platform.  If present a
+		"build-cc.conf" file will be sourced from this script to alter
+		the environment.  Relevant environment variables:
+			CCROOT:  Specifies where the cross-compiler root tree
+			         is -- every cross-compiler will be installed
+			         in a sub-directory of this directory.
+			MAKE: Ideally a GNU make, may also include options
+			TAR: Ideally a GNU tar
+			PATCH: Ideally a GNU patch, but anything that
+			       understands unified diffs will work
+
+	setup-cc:
+		If run with no arguments it lists the available platforms,
+		otherwise it produces on stdout a bourne-shell compatible set
+		of statements to setup a shell for cross-compiling for a
+		specific platform.  It should be installed in the "CCROOT"
+		directory.
+
+Example of Usage:
+	1. Solaris 10/SPARC Cross Compiler
+		a. solaris10$ wget -O collect-platform \
+		              'http://build-cc.rkeene.org/fossil/doc/trunk/collect-platform'
+		b. solaris10$ chmod +x collect-platform
+		c. solaris10$ ./collect-platform
+		d. solaris10$ scp sparc-sun-solaris2.10-platform.tar.bz2 \
+		              linux:build-cc-0.2/platform/
+		e. linux$ mkdir -p ~/root/cross-compilers
+		f. linux$ cp setup-cc ~/root/cross-compilers/
+		g. linux$ ./build-cc sparc-sun-solaris2.10
+		i. linux$ eval `~/root/cross-compilers/setup-cc \
+		          sparc-sun-solaris2.10`
+		j. linux$ $CC -o test test.c
