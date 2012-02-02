@@ -388,6 +388,9 @@ fi
 	mkdir "gcc-${CCNAME}"
 	cd "gcc-${CCNAME}" || exit -1
 
+	## Unset "CPPFLAGS" since GOMP/OpenMP does not properly sanitize it
+	unset CPPFLAGS
+
 	## Build GCC
 	if [ "${STAGE}" = "stage1" ]; then
 		### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
