@@ -100,7 +100,7 @@ elif [ -z "${CC_FOR_BUILD}" -a -n "${HOST_CC}" ]; then
 	CC_FOR_BUILD="${HOST_CC}"
 fi
 
-CCROOT="$(readlink -f "${CCROOT}")"
+CCROOT="$(cd "${CCROOT}" && pwd)"
 echo "PATH='${CCROOT}/${CCNAME}/${CCNAME}/bin:${PATH}:${CCROOT}/${CCNAME}/bin';"
 echo "AR='${CCNAME}-ar';"
 echo "AS='${CCNAME}-as';"
