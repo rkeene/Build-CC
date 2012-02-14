@@ -234,6 +234,19 @@ if [ -f "${CCDIR}/${CCNAME}/multilib" ]; then
 	rm -f "${CCDIR}/${CCNAME}/multilib"
 fi
 
+### Set C compiler flags from tarball
+if [ -f "${CCDIR}/${CCNAME}/BUILD_CC_GCC_CONFIGURE_EXTRA" ]; then
+	add="$(cat "${CCDIR}/${CCNAME}/BUILD_CC_GCC_CONFIGURE_EXTRA")"
+
+	#### Ensure these flags aren't malicious
+	##### XXX: TODO: Build the extra flags as an array for safety
+	if ! echo "${add}" | grep '[;|<>]' >/dev/null; then
+		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} ${add}"
+	fi
+	
+	rm -f "${CCDIR}/${CCNAME}/BUILD_CC_GCC_CONFIGURE_EXTRA"
+fi
+
 ## Determine stage of build process
 STAGE="$2"
 
