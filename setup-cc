@@ -101,7 +101,7 @@ elif [ -z "${CC_FOR_BUILD}" -a -n "${HOST_CC}" ]; then
 fi
 
 CCROOT="$(cd "${CCROOT}" && pwd)"
-echo "PATH='${CCROOT}/${CCNAME}/${CCNAME}/bin:${PATH}:${CCROOT}/${CCNAME}/bin';"
+echo "PATH='${PATH}:${CCROOT}/${CCNAME}/bin';"
 echo "AR='${CCNAME}-ar';"
 echo "AS='${CCNAME}-as';"
 echo "CC='${CCNAME}-gcc${CC_ADD}';"
