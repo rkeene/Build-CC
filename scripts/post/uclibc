@@ -95,11 +95,11 @@ fi
 
 # Modify "libc.so" to contain the correct paths
 for file in "${PREFIX}/lib"/lib*.so; do
-	if ! grep '^OUTPUT_FORMAT ' "${file}" >/dev/null 2>/dev/null; then
+	if ! grep '^GROUP' "${file}" >/dev/null 2>/dev/null; then
 		continue
 	fi
 
-	sed 's@ [^ ]*/lib/lib@ /lib/lib@g' "${file}" > "${file}.new"
+	sed 's|'"${PREFIX}"'/*|/|g' "${file}" > "${file}.new"
 	cat "${file}.new" > "${file}"
 	rm -f "${file}.new"
 done
