@@ -31,6 +31,9 @@ case "${arch}" in
 	arm*)
 		arch=arm
 		;;
+	mips*)
+		arch=mips
+		;;
 	hppa*)
 		arch=hppa
 		;;

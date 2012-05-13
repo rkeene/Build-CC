@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # URLs and versions
-UCLIBC_VERS='0.9.32'
+UCLIBC_VERS='0.9.32.1'
 UCLIBC_URL="http://uclibc.org/downloads/uClibc-${UCLIBC_VERS}.tar.bz2"
 UCLIBC_TARBALL="src/uClibc-${UCLIBC_VERS}.tar.bz2"
 UCLIBC_DIR="uClibc-${UCLIBC_VERS}"
@@ -54,6 +54,9 @@ case "${CCNAME}" in
 	armeb-*)
 		extra_make_options="${extra_make_options} ARCH_LITTLE_ENDIAN=n ARCH_BIG_ENDIAN=y"
 		;;
+	mipsel-*)
+		extra_make_options="${extra_make_options} ARCH_LITTLE_ENDIAN=y ARCH_BIG_ENDIAN=n"
+		;;
 esac
 
 download "${UCLIBC_URL}" "${UCLIBC_TARBALL}" || exit 1
@@ -89,6 +92,17 @@ s@^# DO_XSI_MATH.*$@DO_XSI_MATH=y@;
 if [ ! -f "${PREFIX}/include/utime.h" ]; then
 	echo '#include <linux/utime.h>' > "${PREFIX}/include/utime.h"
 fi
+
+# Modify "libc.so" to contain the correct paths
+for file in "${PREFIX}/lib"/lib*.so; do
+	if ! grep '^OUTPUT_FORMAT ' "${file}" >/dev/null 2>/dev/null; then
+		continue
+	fi
+
+	sed 's@ [^ ]*/lib/lib@ /lib/lib@g' "${file}" > "${file}.new"
+	cat "${file}.new" > "${file}"
+	rm -f "${file}.new"
+done
 
 rm -rf "${UCLIBC_DIR}"
 

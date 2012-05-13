@@ -48,7 +48,8 @@ use_gnu_as='1'
 ## Parse arguments
 ### Determine list of platforms
 platforms[0]='armel-unknown-linux-uclibc'
-idx=1
+platforms[1]='mipsel-unknown-linux-uclibc'
+idx=2
 for platform in "${BUILD_CC_PLATFORMDIR}"/*-platform.tar.bz2; do
 	if [ ! -f "${platform}" ]; then
 		continue
