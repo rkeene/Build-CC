@@ -68,7 +68,7 @@ bzip2 -dc "${UCLIBC_TARBALL}" | tar -xf -
 	cd "${UCLIBC_DIR}" || exit 1
 
 	# Use default configuration
-	${MAKE_SINGLE} CROSS="${CCNAME}-" PREFIX="" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="${PREFIX}/" DEVEL_PREFIX="${PREFIX}/" ${extra_make_options} defconfig || exit 1
+	${MAKE_SINGLE} CROSS="${CCNAME}-" PREFIX="${PREFIX}" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="/" DEVEL_PREFIX="/" ${extra_make_options} defconfig || exit 1
 
 	# Update default configuration and rebuild
 	sed '
@@ -79,13 +79,13 @@ s@^# DO_C99_MATH.*$@DO_C99_MATH=y@;
 s@^# DO_XSI_MATH.*$@DO_XSI_MATH=y@;
 ' .config > .config.new
 	mv .config.new .config
-	yes '' | ${MAKE_SINGLE} CROSS="${CCNAME}-" PREFIX="" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="${PREFIX}/" DEVEL_PREFIX="${PREFIX}/" ${extra_make_options} oldconfig
+	yes '' | ${MAKE_SINGLE} CROSS="${CCNAME}-" PREFIX="${PREFIX}" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="/" DEVEL_PREFIX="/" ${extra_make_options} oldconfig
 
 	# Build
-	${MAKE} CROSS="${CCNAME}-" PREFIX="" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="${PREFIX}/" DEVEL_PREFIX="${PREFIX}/" ${extra_make_options} || exit 1
+	${MAKE} CROSS="${CCNAME}-" PREFIX="${PREFIX}" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="/" DEVEL_PREFIX="/" ${extra_make_options} || exit 1
 
 	# Install
-	${MAKE} CROSS="${CCNAME}-" PREFIX="" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="${PREFIX}/" DEVEL_PREFIX="${PREFIX}/" ${extra_make_options} install || exit 1
+	${MAKE} CROSS="${CCNAME}-" PREFIX="${PREFIX}" ARCH="${arch}" KERNEL_HEADERS="${PREFIX}/include" RUNTIME_PREFIX="/" DEVEL_PREFIX="/" ${extra_make_options} install || exit 1
 ) || exit 1
 
 # Perform fix-ups
