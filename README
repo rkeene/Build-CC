@@ -46,3 +46,11 @@ Example of Usage:
 		i. linux$ eval `~/root/cross-compilers/setup-cc \
 		          sparc-sun-solaris2.10`
 		j. linux$ $CC -o test test.c
+
+	2. Linux 2.6.35.4/MIPS Cross Compiler (uClibc)
+		a. linux$ mkdir -p ~/root/cross-compilers
+		b. linux$ cp setup-cc ~/root/cross-compilers/
+		c. linux$ ./build-cc mipsel-unknown-linux-uclibc
+		d. linux$ eval `~/root/cross-compilers/setup-cc \
+		          mipsel-unknown-linux-uclibc`
+		e. linux$ $CC -o test test.c
