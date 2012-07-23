@@ -144,6 +144,7 @@ case "${PLATFORM}" in
 		# Libraries
 		SRCLIB32='lib'
 		SRCLIB64=''
+		SRCLIBPLAT="lib/${PLATFORM}"
 
 		if [ -d '/usr/lib32' ]; then
 			SRCLIB32='lib32'
@@ -163,6 +164,24 @@ case "${PLATFORM}" in
 		cp /${SRCLIB32}/lib*.so* "${PLATFORM_LIB}/"
 		cp /${SRCLIB32}/lib*.a "${PLATFORM_LIB}/"
 		cp /${SRCLIB32}/ld-*.so* "${PLATFORM_LIB}/"
+
+		if [ -d "/usr/${SRCLIBPLAT}" ]; then
+			cp /usr/${SRCLIBPLAT}/*.o "${PLATFORM_LIB}/"
+			cp /usr/${SRCLIBPLAT}/lib*.so* "${PLATFORM_LIB}/"
+			cp /usr/${SRCLIBPLAT}/lib*.a "${PLATFORM_LIB}/"
+			cp /usr/${SRCLIBPLAT}/ld-*.so* "${PLATFORM_LIB}/"
+
+			ln -s . "${PLATFORM_LIB}/${PLATFORM}"
+		fi
+
+		if [ -d "/${SRCLIBPLAT}" ]; then
+			cp /${SRCLIBPLAT}/*.o "${PLATFORM_LIB}/"
+			cp /${SRCLIBPLAT}/lib*.so* "${PLATFORM_LIB}/"
+			cp /${SRCLIBPLAT}/lib*.a "${PLATFORM_LIB}/"
+			cp /${SRCLIBPLAT}/ld-*.so* "${PLATFORM_LIB}/"
+
+			ln -s . "${PLATFORM_LIB}/${PLATFORM}"
+		fi
 
 		if [ -n "${SRCLIB64}" ]; then
 			PLATFORM_LIB64="${PLATFORM_ROOT}/lib64"
@@ -188,6 +207,12 @@ case "${PLATFORM}" in
 		# "pkgconfig"
 		cp /usr/${SRCLIB32}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
 		cp /${SRCLIB32}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		if [ -d "/usr/${SRCLIBPLAT}/pkgconfig" ]; then
+			cp /usr/${SRCLIBPLAT}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		fi
+		if [ -d "/${SRCLIBPLAT}/pkgconfig" ]; then
+			cp /${SRCLIBPLAT}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		fi
 		if [ -n "${SRCLIB64}" ]; then
 			cp /usr/${SRCLIB64}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG64}/"
 			cp /${SRCLIB64}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG64}/"
