@@ -34,7 +34,7 @@ fi
 
 # Tool versions
 BINUTILS_VERS='2.22'
-GCC_VERS='4.6.2'
+GCC_VERS='4.6.3'
 GMP_VERS='5.0.2'
 MPFR_VERS='3.0.1'
 MPC_VERS='0.9'
@@ -98,7 +98,7 @@ BINUTILS_TARBALL="src/binutils-${BINUTILS_VERS}.tar.bz2"
 BINUTILS_DIR="binutils-${BINUTILS_VERS}"
 
 ### GCC
-GCC_URL="http://mirrors-us.seosue.com/gcc/releases/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.bz2"
+GCC_URL="http://mirrors.kernel.org/gnu/gcc/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.bz2"
 GCC_TARBALL="src/gcc-${GCC_VERS}.tar.bz2"
 GCC_DIR="gcc-${GCC_VERS}"
 
@@ -364,8 +364,15 @@ fi
 		# Apply patches
 		## Apply patch files
 		for patchfile in "$(pwd)/patches/gcc"/*.diff; do
+			patchfile_checkscript="$(echo "${patchfile}" | sed 's@\.diff$@.sh@')"
 			if [ ! -f "${patchfile}" ]; then
 				continue
+			fi
+
+			if [ -x "${patchfile_checkscript}" ]; then
+				if ! "${patchfile_checkscript}" "${GCC_VERS}"; then
+					continue
+				fi
 			fi
 
 			(
