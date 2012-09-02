@@ -38,6 +38,7 @@ GCC_VERS='4.6.3'
 GMP_VERS='5.0.2'
 MPFR_VERS='3.0.1'
 MPC_VERS='0.9'
+ECJ_VERS='4.5'
 
 # Start of script
 ## Initialize default values
@@ -116,6 +117,10 @@ MPFR_DIR="mpfr-${MPFR_VERS}"
 MPC_URL="http://www.multiprecision.org/mpc/download/mpc-${MPC_VERS}.tar.gz"
 MPC_TARBALL="src/mpc-${MPC_VERS}.tar.gz"
 MPC_DIR="mpc-${MPC_VERS}"
+
+### EJC
+EJC_URL="ftp://sourceware.org/pub/java/ecj-${EJC_VERS}.jar"
+EJC_JARFILE="src/ejc-${EJC_VERS}.jar"
 
 ## Clean-up
 if [ "$1" = "clean" -o "$1" = "distclean" ]; then
@@ -345,6 +350,7 @@ fi
 		download "${GMP_URL}" "${GMP_TARBALL}"
 		download "${MPFR_URL}" "${MPFR_TARBALL}"
 		download "${MPC_URL}" "${MPC_TARBALL}"
+		download "${EJC_URL}" "${EJC_JARFILE}"
 
 		# Extract sources
 		bzip2 -dc "${GCC_TARBALL}" | "${TAR:-tar}" -xf -
@@ -360,6 +366,7 @@ fi
 		mv "${GMP_DIR}" "${GCC_DIR}/gmp"
 		mv "${MPFR_DIR}" "${GCC_DIR}/mpfr"
 		mv "${MPC_DIR}" "${GCC_DIR}/mpc"
+		cp "${EJC_JARFILE}" "${GCC_DIR}/ecj.jar"
 
 		# Apply patches
 		## Apply patch files
@@ -421,7 +428,8 @@ fi
 		${MAKE} install-gcc install-target-libgcc || exit 1
 	else
 		### Stage 2 -- the full compiler suite
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++,java' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA} || \
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 		${MAKE} || exit 1
 		${MAKE} install || exit 1
