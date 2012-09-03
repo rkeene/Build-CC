@@ -34,10 +34,9 @@ fi
 
 # Tool versions
 BINUTILS_VERS='2.22'
-GCC_VERS='4.6.3'
-GMP_VERS='5.0.2'
-MPFR_VERS='3.0.1'
-MPC_VERS='0.9'
+CLANG_VERS='3.1'
+LLVM_VERS="${CLANG_VERS}"
+CRT_VERS="${CLANG_VERS}"
 
 # Start of script
 ## Initialize default values
@@ -97,33 +96,27 @@ BINUTILS_URL="http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERS}.tar.bz2"
 BINUTILS_TARBALL="src/binutils-${BINUTILS_VERS}.tar.bz2"
 BINUTILS_DIR="binutils-${BINUTILS_VERS}"
 
-### GCC
-GCC_URL="http://mirrors.kernel.org/gnu/gcc/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.bz2"
-GCC_TARBALL="src/gcc-${GCC_VERS}.tar.bz2"
-GCC_DIR="gcc-${GCC_VERS}"
+### CLANG
+CLANG_URL="http://llvm.org/releases/${CLANG_VERS}/clang-${CLANG_VERS}.src.tar.gz"
+CLANG_TARBALL="src/clang-${CLANG_VERS}.tar.gz"
+CLANG_DIR="clang-${CLANG_VERS}.src"
 
-### GMP
-GMP_URL="http://ftp.gnu.org/gnu/gmp/gmp-${GMP_VERS}.tar.bz2"
-GMP_TARBALL="src/gmp-${GMP_VERS}.tar.bz2"
-GMP_DIR="gmp-${GMP_VERS}"
+### LLVM
+LLVM_URL="http://llvm.org/releases/${LLVM_VERS}/llvm-${LLVM_VERS}.src.tar.gz"
+LLVM_TARBALL="src/llvm-${LLVM_VERS}.tar.gz"
+LLVM_DIR="llvm-${LLVM_VERS}.src"
 
-### MPFR
-MPFR_URL="http://www.mpfr.org/mpfr-${MPFR_VERS}/mpfr-${MPFR_VERS}.tar.bz2"
-MPFR_TARBALL="src/mpfr-${MPFR_VERS}.tar.bz2"
-MPFR_DIR="mpfr-${MPFR_VERS}"
-
-### MPC
-MPC_URL="http://www.multiprecision.org/mpc/download/mpc-${MPC_VERS}.tar.gz"
-MPC_TARBALL="src/mpc-${MPC_VERS}.tar.gz"
-MPC_DIR="mpc-${MPC_VERS}"
+### Compiler-RT
+CRT_URL="http://llvm.org/releases/3.1/compiler-rt-3.1.src.tar.gz"
+CRT_TARBALL="src/compiler-rt-${CRT_VERS}.tar.gz"
+CRT_DIR="compiler-rt-3.1.src"
 
 ## Clean-up
 if [ "$1" = "clean" -o "$1" = "distclean" ]; then
-	rm -rf "${BINUTILS_DIR}" "${GCC_DIR}" "${GMP_DIR}" "${MPFR_DIR}" "${MPC_DIR}"
+	rm -rf "${CLANG_DIR}" "${LLVM_DIR}" "${CRT_DIR}" "${BINUTILS_DIR}"
 
 	for platform in "${platforms[@]}"; do
-		rm -rf "gcc-${platform}"
-		rm -rf "binutils-${platform}"
+		rm -rf "llvm-${platform}"
 	done
 
 	for appscript in scripts/* scripts/pre/* scripts/post/*; do
@@ -136,7 +129,7 @@ if [ "$1" = "clean" -o "$1" = "distclean" ]; then
 fi
 
 if [ "$1" = "distclean" ]; then
-	rm -f "${BINUTILS_TARBALL}" "${GCC_TARBALL}" "${GMP_TARBALL}" "${MPFR_TARBALL}" "${MPC_TARBALL}"
+	rm -f "${CLANG_TARBALL}" "${LLVM_TARBALL}" "${CRT_TARBALL}" "${BINUTILS_TARBALL}"
 
 	for appscript in scripts/* scripts/pre/* scripts/post/*; do
 		"${appscript}" "distclean" >/dev/null 2>/dev/null
@@ -163,7 +156,7 @@ CCDIR="${CCROOT}/${CCNAME}"
 ### Per CPU
 case "${CCNAME}" in
 	hppa64-*|hppa1*-)
-		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --disable-libquadmath"
+		BUILD_CC_LLVM_CONFIGURE_EXTRA="${BUILD_CC_LLVM_CONFIGURE_EXTRA} --disable-libquadmath"
 		;;
 esac
 
@@ -177,33 +170,11 @@ case "${CCNAME}" in
 		#### Default to disabling multilib, will be re-enabled by target if supported
 		use_multilib='0'
 		;;
-	*-darwin*)
-		use_gnu_ld='0'
-		use_gnu_as='0'
-		use_ld64='0'
-
-		if echo "${CCNAME}" | egrep '^(x86_64|ppc64)-' >/dev/null; then
-			use_ld64='1'
-		fi
-
-		if [ "${use_ld64}" = '0' ]; then
-			ldcmd='ld'
-		else
-			ldcmd='ld64'
-		fi
-
-		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-ld=${CCDIR}/${CCNAME}/bin/${ldcmd} --with-as=${CCDIR}/${CCNAME}/bin/as"
-
-		unset ldcmd
-		;;
 esac
 
-if [ "${use_gnu_ld}" = "1" ]; then
-	BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-gnu-ld"
-fi
-
-if [ "${use_gnu_as}" = "1" ]; then
-	BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-gnu-as"
+### Disable optimizations if compiling with GCC older than 4.6
+if ${CC:-gcc} --version 2>/dev/null | grep 'gcc' >/dev/null; then
+	BUILD_CC_LLVM_CONFIGURE_EXTRA="${BUILD_CC_LLVM_CONFIGURE_EXTRA} --with-optimize-option=-O0"
 fi
 
 ## Determine platform file tarball
@@ -236,16 +207,16 @@ if [ -f "${CCDIR}/${CCNAME}/multilib" ]; then
 fi
 
 ### Set C compiler flags from tarball
-if [ -f "${CCDIR}/${CCNAME}/BUILD_CC_GCC_CONFIGURE_EXTRA" ]; then
-	add="$(cat "${CCDIR}/${CCNAME}/BUILD_CC_GCC_CONFIGURE_EXTRA")"
+if [ -f "${CCDIR}/${CCNAME}/BUILD_CC_LLVM_CONFIGURE_EXTRA" ]; then
+	add="$(cat "${CCDIR}/${CCNAME}/BUILD_CC_LLVM_CONFIGURE_EXTRA")"
 
 	#### Ensure these flags aren't malicious
 	##### XXX: TODO: Build the extra flags as an array for safety
 	if ! echo "${add}" | grep '[;|<>]' >/dev/null; then
-		BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} ${add}"
+		BUILD_CC_LLVM_CONFIGURE_EXTRA="${BUILD_CC_LLVM_CONFIGURE_EXTRA} ${add}"
 	fi
 	
-	rm -f "${CCDIR}/${CCNAME}/BUILD_CC_GCC_CONFIGURE_EXTRA"
+	rm -f "${CCDIR}/${CCNAME}/BUILD_CC_LLVM_CONFIGURE_EXTRA"
 fi
 
 ## Determine stage of build process
@@ -307,19 +278,16 @@ done
 ) || exit 1
 rm -rf "binutils-${CCNAME}"
 
-## Compile C compiler (GCC) if needed
-### Prepare GCC fix-ups (stage1)
+## Compile C compiler (CLANG) if needed
+### Prepare fix-ups (stage1)
 if [ "${STAGE}" = "stage1" ]; then
-	### XXX: GCC produces a broken compiler -- compiles require libgcc_eh.a, which it doesn't emit
-	libgcceha="${CCDIR}/lib/gcc/${CCNAME}/${GCC_VERS}/libgcc_eh.a"
-	if [ -h "${libgcceha}" ]; then
-		rm -f "${libgcceha}"
-	fi
+	true
 fi
 
 ### If multilib was not requested, disable it
 if [ "${use_multilib}" = "0" ]; then
-	BUILD_CC_GCC_CONFIGURE_EXTRA="--disable-multilib ${BUILD_CC_GCC_CONFIGURE_EXTRA}"
+	#BUILD_CC_GCC_CONFIGURE_EXTRA="--disable-multilib ${BUILD_CC_GCC_CONFIGURE_EXTRA}"
+	true
 fi
 
 ## Compile
@@ -339,38 +307,34 @@ fi
 		fi
 	fi
 
-	if [ ! -d "${GCC_DIR}" ]; then
+	if [ ! -d "${LLVM_DIR}" ]; then
 		# Download sources required
-		download "${GCC_URL}" "${GCC_TARBALL}"
-		download "${GMP_URL}" "${GMP_TARBALL}"
-		download "${MPFR_URL}" "${MPFR_TARBALL}"
-		download "${MPC_URL}" "${MPC_TARBALL}"
+		download "${CLANG_URL}" "${CLANG_TARBALL}"
+		download "${LLVM_URL}" "${LLVM_TARBALL}"
+		download "${CRT_URL}" "${CRT_TARBALL}"
 
 		# Extract sources
-		bzip2 -dc "${GCC_TARBALL}" | "${TAR:-tar}" -xf -
-		bzip2 -dc "${GMP_TARBALL}" | "${TAR:-tar}" -xf -
-		bzip2 -dc "${MPFR_TARBALL}" | "${TAR:-tar}" -xf -
-		gzip -dc "${MPC_TARBALL}" | "${TAR:-tar}" -xf -
+		gzip -dc "${CLANG_TARBALL}" | "${TAR:-tar}" -xf -
+		gzip -dc "${LLVM_TARBALL}" | "${TAR:-tar}" -xf -
+		gzip -dc "${CRT_TARBALL}" | "${TAR:-tar}" -xf -
 
 		# Arroung sources as needed
-		rm -rf "${GCC_DIR}/gmp"
-		rm -rf "${GCC_DIR}/mpfr"
-		rm -rf "${GCC_DIR}/mpc"
+		rm -rf "${LLVM_DIR}/tools/clang"
+		rm -rf "${LLVM_DIR}/projects/compiler-rt"
 
-		mv "${GMP_DIR}" "${GCC_DIR}/gmp"
-		mv "${MPFR_DIR}" "${GCC_DIR}/mpfr"
-		mv "${MPC_DIR}" "${GCC_DIR}/mpc"
+		mv "${CLANG_DIR}" "${LLVM_DIR}/tools/clang"
+		mv "${CRT_DIR}" "${LLVM_DIR}/projects/compiler-rt"
 
 		# Apply patches
 		## Apply patch files
-		for patchfile in "$(pwd)/patches/gcc"/*.diff; do
+		for patchfile in "$(pwd)/patches/llvm"/*.diff; do
 			patchfile_checkscript="$(echo "${patchfile}" | sed 's@\.diff$@.sh@')"
 			if [ ! -f "${patchfile}" ]; then
 				continue
 			fi
 
 			if [ -x "${patchfile_checkscript}" ]; then
-				if ! "${patchfile_checkscript}" "${GCC_VERS}"; then
+				if ! "${patchfile_checkscript}" "${LLVM_VERS}"; then
 					continue
 				fi
 			fi
@@ -378,23 +342,23 @@ fi
 			(
 				echo " * Applying patch ${patchfile}"
 
-				cd "${GCC_DIR}" || exit 1
+				cd "${LLVM_DIR}" || exit 1
 
 				"${PATCH:-patch}" -p1 < "${patchfile}" || exit 1
 			) || exit 1
 		done
 
 		## Apply patch scripts
-		export GCC_DIR
-		for gccscript in scripts/gcc/*; do
-			if [ ! -x "${gccscript}" ]; then
+		export LLVM_DIR
+		for script in scripts/llvm/*; do
+			if [ ! -x "${script}" ]; then
 				continue
 			fi
 
 			sourcefile="${TMPDIR:-/tmp}/build-cc-sourcefile-$$${RANDOM}${RANDOM}${RANDOM}"
 			rm -f "${sourcefile}"
 
-			"${gccscript}" "${CCNAME}" "${CCDIR}" "${CCDIR}/${CCNAME}" "${STAGE}" "${sourcefile}" || exit 1
+			"${script}" "${CCNAME}" "${CCDIR}" "${CCDIR}/${CCNAME}" "${STAGE}" "${sourcefile}" || exit 1
 
 			if [ -f "${sourcefile}" ]; then
 				. "${sourcefile}"
@@ -403,49 +367,40 @@ fi
 		done
 	fi
 
-	# Build GCC with shared object support
+	# Build CLANG with shared object support
 	## Create build directory
-	rm -rf "gcc-${CCNAME}"
-	mkdir "gcc-${CCNAME}"
-	cd "gcc-${CCNAME}" || exit -1
+	rm -rf "llvm-${CCNAME}"
+	mkdir "llvm-${CCNAME}"
+	cd "llvm-${CCNAME}" || exit -1
 
-	## Unset "CPPFLAGS" since GOMP/OpenMP does not properly sanitize it
-	unset CPPFLAGS
+	## Update environment so C compiler's build system can find binutils
+	PATH="${PATH}:${CCDIR}/bin"
+	export PATH
 
-	## Build GCC
+	## Build Compiler
 	if [ "${STAGE}" = "stage1" ]; then
-		### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
-
-		${MAKE} all-gcc all-target-libgcc || exit 1
-		${MAKE} install-gcc install-target-libgcc || exit 1
+		# XXX: TODO
+		true
 	else
 		### Stage 2 -- the full compiler suite
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+		"../${LLVM_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-default-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_LLVM_CONFIGURE_EXTRA}
 
-		${MAKE} || exit 1
-		${MAKE} install || exit 1
+		${MAKE} VERBOSE=1 || exit 1
+		${MAKE} VERBOSE=1 install || exit 1
 	fi
 )
 retval="$?"
 
-### XXX: Create symlink for libgcc_eh.a since GCC references
-### it without building it for static (disable-shared) builds
+### Post stage1 build fixups
 if [ "${STAGE}" = "stage1" ]; then
-	if [ -h "${libgcceha}" ]; then
-		rm -f "${libgcceha}"
-	fi
-
-	if [ ! -f "${libgcceha}" ]; then
-		ln -s libgcc.a "${libgcceha}"
-	fi
+	true
 fi
 
 ### If we exited with failure above, abort
 if [ "${retval}" != "2" -a "${retval}" != "0" ]; then
 	exit 1
 fi
-rm -rf "gcc-${CCNAME}"
+rm -rf "llvm-${CCNAME}"
 
 ## Install libraries for this platform
 for appscript in scripts/* scripts/post/*; do
@@ -459,9 +414,9 @@ for appscript in scripts/* scripts/post/*; do
 
 	(
 		PATH="${PATH}:${CCDIR}/bin"
-		CC="${CCNAME}-gcc"
+		CC="${CCNAME}-cc"
 		LD="${CCNAME}-ld"
-		CXX="${CCNAME}-g++"
+		CXX="${CCNAME}-c++"
 		AR="${CCNAME}-ar"
 		STRIP="${CCNAME}-strip"
 		RANLIB="${CCNAME}-ranlib"
