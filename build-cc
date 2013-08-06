@@ -34,7 +34,7 @@ fi
 
 # Tool versions
 BINUTILS_VERS='2.22'
-CLANG_VERS='3.1'
+CLANG_VERS='3.3'
 LLVM_VERS="${CLANG_VERS}"
 CRT_VERS="${CLANG_VERS}"
 
@@ -97,9 +97,14 @@ BINUTILS_TARBALL="src/binutils-${BINUTILS_VERS}.tar.bz2"
 BINUTILS_DIR="binutils-${BINUTILS_VERS}"
 
 ### CLANG
-CLANG_URL="http://llvm.org/releases/${CLANG_VERS}/clang-${CLANG_VERS}.src.tar.gz"
-CLANG_TARBALL="src/clang-${CLANG_VERS}.tar.gz"
-CLANG_DIR="clang-${CLANG_VERS}.src"
+if [ "${CLANG_VERS}" = "3.3" ]; then
+	CLANG_NAME="cfe"
+else
+	CLANG_NAME="clang"
+fi
+CLANG_URL="http://llvm.org/releases/${CLANG_VERS}/${CLANG_NAME}-${CLANG_VERS}.src.tar.gz"
+CLANG_TARBALL="src/${CLANG_NAME}-${CLANG_VERS}.tar.gz"
+CLANG_DIR="${CLANG_NAME}-${CLANG_VERS}.src"
 
 ### LLVM
 LLVM_URL="http://llvm.org/releases/${LLVM_VERS}/llvm-${LLVM_VERS}.src.tar.gz"
@@ -276,7 +281,9 @@ done
 
 	${MAKE} install || exit 1
 ) || exit 1
-rm -rf "binutils-${CCNAME}"
+if [ "${BUILD_CC_DONT_REMOVE}" != '1' ]; then
+	rm -rf "binutils-${CCNAME}"
+fi
 
 ## Compile C compiler (CLANG) if needed
 ### Prepare fix-ups (stage1)
@@ -400,7 +407,10 @@ fi
 if [ "${retval}" != "2" -a "${retval}" != "0" ]; then
 	exit 1
 fi
-rm -rf "llvm-${CCNAME}"
+
+if [ "${BUILD_CC_DONT_REMOVE}" != '1' ]; then
+	rm -rf "llvm-${CCNAME}"
+fi
 
 ## Install libraries for this platform
 for appscript in scripts/* scripts/post/*; do
