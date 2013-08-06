@@ -83,7 +83,7 @@ if [ -z "${PLATFORM}" ]; then
 			PLATFORM="$(uname -m)-unknown-linux${libc}"
 			;;
 		AIX)
-			PLATFORM="$(uname -p)-ibm-aix$(uname -v).$(uname -r).0"
+			PLATFORM="$(uname -p)-ibm-aix$(uname -v).$(uname -r).0.0"
 			;;
 	esac
 fi
