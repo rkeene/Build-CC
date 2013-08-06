@@ -199,11 +199,11 @@ case "${CCNAME}" in
 esac
 
 if [ "${use_gnu_ld}" = "1" ]; then
-	BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-gnu-ld"
+	BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-gnu-ld --with-ld=${CCDIR}/bin/${CCNAME}-ld"
 fi
 
 if [ "${use_gnu_as}" = "1" ]; then
-	BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-gnu-as"
+	BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-gnu-as --with-as=${CCDIR}/bin/${CCNAME}-as"
 fi
 
 ## Determine platform file tarball
@@ -413,19 +413,24 @@ fi
 	unset CPPFLAGS
 
 	## Build GCC
-	if [ "${STAGE}" = "stage1" ]; then
-		### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+	(
+		PATH="${PATH}:${CCDIR}/bin"
+		export PATH
 
-		${MAKE} all-gcc all-target-libgcc || exit 1
-		${MAKE} install-gcc install-target-libgcc || exit 1
-	else
-		### Stage 2 -- the full compiler suite
-		"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+		if [ "${STAGE}" = "stage1" ]; then
+			### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
-		${MAKE} || exit 1
-		${MAKE} install || exit 1
-	fi
+			${MAKE} all-gcc all-target-libgcc || exit 1
+			${MAKE} install-gcc install-target-libgcc || exit 1
+		else
+			### Stage 2 -- the full compiler suite
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+
+			${MAKE} || exit 1
+			${MAKE} install || exit 1
+		fi
+	) || exit 1
 )
 retval="$?"
 
