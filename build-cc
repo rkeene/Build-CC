@@ -51,6 +51,16 @@ platforms=(
 	armel-unknown-linux-uclibc
 	mipsel-unknown-linux-uclibc
 )
+
+untested_platforms=(
+	powerpc-unknown-linux-gnu
+	powerpc-unknown-linux-uclibc
+)
+
+if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
+	platforms=("${platforms[@]}" "${untested_platforms[@]}")
+fi
+
 idx="${#platforms[@]}"
 for platform in "${BUILD_CC_PLATFORMDIR}"/*-platform.tar.bz2; do
 	if [ ! -f "${platform}" ]; then
