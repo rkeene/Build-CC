@@ -33,11 +33,27 @@ if [ -f "build-cc.conf" ]; then
 fi
 
 # Tool versions
-BINUTILS_VERS='2.22'
-GCC_VERS='4.9.0'
-GMP_VERS='6.0.0a'
-MPFR_VERS='3.1.2'
-MPC_VERS='1.0.2'
+## SHA1 may be left blank to disable hashing
+if [ -z "${BINUTILS_VERS}" ]; then
+	BINUTILS_VERS='2.22'
+	BINUTILS_SHA1='65b304a0b9a53a686ce50a01173d1f40f8efe404'
+fi
+if [ -z "${GCC_VERS}" ]; then
+	GCC_VERS='4.9.0'
+	GCC_SHA1='fbde8eb49f2b9e6961a870887cf7337d31cd4917'
+fi
+if [ -z "${GMP_VERS}" ]; then
+	GMP_VERS='6.0.0a'
+	GMP_SHA1='360802e3541a3da08ab4b55268c80f799939fddc'
+fi
+if [ -z "${MPFR_VERS}" ]; then
+	MPFR_VERS='3.1.2'
+	MPFR_SHA1='46d5a11a59a4e31f74f73dd70c5d57a59de2d0b4'
+fi
+if [ -z "${MPC_VERS}" ]; then
+	MPC_VERS='1.0.2'
+	MPC_SHA1='5072d82ab50ec36cc8c0e320b5c377adb48abe70'
+fi
 
 # Start of script
 ## Initialize default values
@@ -302,7 +318,7 @@ done
 	fi
 
 	if [ ! -d "${BINUTILS_DIR}" ]; then
-		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}"
+		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}" "${BINUTILS_SHA1}"
 
 		bzip2 -dc "${BINUTILS_TARBALL}" | tar -xf -
 	fi
@@ -353,10 +369,10 @@ fi
 
 	if [ ! -d "${GCC_DIR}" ]; then
 		# Download sources required
-		download "${GCC_URL}" "${GCC_TARBALL}"
-		download "${GMP_URL}" "${GMP_TARBALL}"
-		download "${MPFR_URL}" "${MPFR_TARBALL}"
-		download "${MPC_URL}" "${MPC_TARBALL}"
+		download "${GCC_URL}" "${GCC_TARBALL}" "${GCC_SHA1}"
+		download "${GMP_URL}" "${GMP_TARBALL}" "${GMP_SHA1}"
+		download "${MPFR_URL}" "${MPFR_TARBALL}" "${MPFR_SHA1}"
+		download "${MPC_URL}" "${MPC_TARBALL}" "${MPC_SHA1}"
 
 		# Extract sources
 		bzip2 -dc "${GCC_TARBALL}" | "${TAR:-tar}" -xf -
