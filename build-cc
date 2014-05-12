@@ -34,10 +34,10 @@ fi
 
 # Tool versions
 BINUTILS_VERS='2.22'
-GCC_VERS='4.6.3'
-GMP_VERS='5.0.2'
-MPFR_VERS='3.0.1'
-MPC_VERS='0.9'
+GCC_VERS='4.9.0'
+GMP_VERS='6.0.0a'
+MPFR_VERS='3.1.2'
+MPC_VERS='1.0.2'
 
 # Start of script
 ## Initialize default values
@@ -47,9 +47,11 @@ use_gnu_as='1'
 
 ## Parse arguments
 ### Determine list of platforms
-platforms[0]='armel-unknown-linux-uclibc'
-platforms[1]='mipsel-unknown-linux-uclibc'
-idx=2
+platforms=(
+	armel-unknown-linux-uclibc
+	mipsel-unknown-linux-uclibc
+)
+idx="${#platforms[@]}"
 for platform in "${BUILD_CC_PLATFORMDIR}"/*-platform.tar.bz2; do
 	if [ ! -f "${platform}" ]; then
 		continue
@@ -105,7 +107,7 @@ GCC_DIR="gcc-${GCC_VERS}"
 ### GMP
 GMP_URL="http://ftp.gnu.org/gnu/gmp/gmp-${GMP_VERS}.tar.bz2"
 GMP_TARBALL="src/gmp-${GMP_VERS}.tar.bz2"
-GMP_DIR="gmp-${GMP_VERS}"
+GMP_DIR="gmp-$(echo "${GMP_VERS}" | sed 's@[a-zA-Z]*$@@')"
 
 ### MPFR
 MPFR_URL="http://www.mpfr.org/mpfr-${MPFR_VERS}/mpfr-${MPFR_VERS}.tar.bz2"
