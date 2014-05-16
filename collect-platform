@@ -21,7 +21,7 @@ if [ -z "${PLATFORM}" ]; then
 			PLATFORM="$(echo "${PLATFORM}" | sed "s@-redhat-@-redhat${rhel_version}-@")"
 
 			if [ "${rhel_version}" = '5' ]; then
-				BUILD_CC_GCC_CONFIGURE_EXTRA='--disable-target-libsanitizer'
+				BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --disable-libsanitizer --disable-target-libsanitizer"
 			fi
 			;;
 	esac
