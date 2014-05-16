@@ -13,6 +13,18 @@ fi
 if [ -z "${PLATFORM}" ]; then
 	# Determine platform from what GCC was compiled for if possible
 	PLATFORM="$(gcc -dumpmachine 2>/dev/null)"
+
+	case "${PLATFORM}" in
+		*-redhat-linux)
+			# Fix-up RHEL to include version number
+			rhel_version="sed 's@.* release \([0-9][0-9]*\)\..*@\1@' /etc/redhat_release)"
+			PLATFORM="$(echo "${PLATFORM}" | sed "s@-redhat-@-redhat${rhel_version}-@")"
+
+			if [ "${rhel_version}" = '5' ]; then
+				BUILD_CC_GCC_CONFIGURE_EXTRA='--disable-target-libsanitizer'
+			fi
+			;;
+	esac
 fi
 
 if [ -z "${PLATFORM}" ]; then
@@ -86,6 +98,7 @@ if [ -z "${PLATFORM}" ]; then
 			PLATFORM="$(uname -p)-ibm-aix$(uname -v).$(uname -r).0.0"
 			;;
 	esac
+else
 fi
 
 if [ -z "${PLATFORM}" ]; then
@@ -441,6 +454,10 @@ case "${PLATFORM}" in
 		echo 0 > "${PLATFORM_ROOT}/multilib"
 		;;
 esac
+
+if [ -n "${BUILD_CC_GCC_CONFIGURE_EXTRA}" ]; then
+	echo "${BUILD_CC_GCC_CONFIGURE_EXTRA}" > "${PLATFORM_ROOT}/BUILD_CC_GCC_CONFIGURE_EXTRA"
+fi
 
 # 4. Create archive
 ## Resolve symlinks
