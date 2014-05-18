@@ -1,0 +1,14 @@
+diff -uNr binutils-2.24.orig/ld/ldlang.c binutils-2.24-1fixanonversionscript/ld/ldlang.c
+--- binutils-2.24.orig/ld/ldlang.c	2013-11-04 09:33:39.000000000 -0600
++++ binutils-2.24-1fixanonversionscript/ld/ldlang.c	2014-05-17 22:29:32.248016999 -0500
+@@ -7802,9 +7802,7 @@
+   if (link_info.version_info != NULL
+       && (name[0] == '\0' || link_info.version_info->name[0] == '\0'))
+     {
+-      einfo (_("%X%P: anonymous version tag cannot be combined"
+-	       " with other version tags\n"));
+-      free (version);
++      version->vernum = 0;
+       return;
+     }
+ 
