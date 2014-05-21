@@ -231,6 +231,9 @@ case "${PLATFORM}" in
 			cp /usr/${SRCLIB64}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG64}/"
 			cp /${SRCLIB64}/pkgconfig/*.pc "${PLATFORM_PKGCONFIG64}/"
 		fi
+		if [ -d "/usr/share/pkgconfig" ]; then
+			cp /usr/share/pkgconfig/*.pc "${PLATFORM_PKGCONFIG}/"
+		fi
 		;;
 	*-aix*)
 		# Libraries
