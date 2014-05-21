@@ -1,0 +1,11 @@
+--- gcc-4.9.0.orig/configure	2014-03-26 04:19:44.000000000 -0500
++++ gcc-4.9.0-1fixlibdirfftarget/configure	2014-05-20 23:33:44.636517000 -0500
+@@ -7667,7 +7667,7 @@
+ # being built; programs in there won't even run.
+ if test "${build}" = "${host}" && test -d ${srcdir}/gcc; then
+   # Search for pre-installed headers if nothing else fits.
+-  FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -B$(build_tooldir)/bin/ -B$(build_tooldir)/lib/ -isystem $(build_tooldir)/include -isystem $(build_tooldir)/sys-include'
++  FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -B$(build_tooldir)/bin/ -B$(build_tooldir)/lib/ -B$(build_tooldir)/lib32/ -B$(build_tooldir)/lib64/ -isystem $(build_tooldir)/include -isystem $(build_tooldir)/sys-include'
+ fi
+ 
+ if test "x${use_gnu_ld}" = x &&
