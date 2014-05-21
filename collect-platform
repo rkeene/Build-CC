@@ -209,6 +209,8 @@ case "${PLATFORM}" in
 			cp /${SRCLIB64}/lib*.so* "${PLATFORM_LIB64}/"
 			cp /${SRCLIB64}/lib*.a "${PLATFORM_LIB64}/"
 			cp /${SRCLIB64}/ld-*.so* "${PLATFORM_LIB64}/"
+
+			echo 1 > "${PLATFORM_ROOT}/multilib"
 		else
 			echo 0 > "${PLATFORM_ROOT}/multilib"
 		fi
