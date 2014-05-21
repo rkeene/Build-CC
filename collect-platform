@@ -17,7 +17,7 @@ if [ -z "${PLATFORM}" ]; then
 	case "${PLATFORM}" in
 		*-redhat-linux)
 			# Fix-up RHEL to include version number
-			rhel_version="sed 's@.* release \([0-9][0-9]*\)\..*@\1@' /etc/redhat_release)"
+			rhel_version="$(sed 's@.* release \([0-9][0-9]*\)\..*@\1@' /etc/redhat-release)"
 			PLATFORM="$(echo "${PLATFORM}" | sed "s@-redhat-@-redhat${rhel_version}-@")"
 
 			if [ "${rhel_version}" = '5' ]; then
@@ -98,7 +98,6 @@ if [ -z "${PLATFORM}" ]; then
 			PLATFORM="$(uname -p)-ibm-aix$(uname -v).$(uname -r).0.0"
 			;;
 	esac
-else
 fi
 
 if [ -z "${PLATFORM}" ]; then
