@@ -1,0 +1,39 @@
+#! /bin/bash
+
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+
+if [ "${STAGE}" != 'stage2' ]; then
+	exit 0
+fi
+
+script="${CCDIR}/bin/${CCNAME}-pkg-config"
+cat << _EOF_ > "${script}"
+#! /bin/bash
+
+sysroot='${CCDIR}/${CCNAME}'
+_EOF_
+
+cat << \_EOF_ >> "${script}"
+
+unset PKG_CONFIG_DIR PKG_CONFIG_LIBDIR PKG_CONFIG_SYSROOT_DIR
+
+PKG_CONFIG_LIBDIR="${sysroot}/lib/pkgconfig"
+export PKG_CONFIG_LIBDIR
+
+result="$(pkg-config "$@")"
+exitcode="$?"
+
+echo "${result}" | sed '
+        s@-I/usr/@-I'"${sysroot}"'/usr/@g
+        s@-L/usr/@-L'"${sysroot}"'/usr/@g
+'
+
+exit "${exitcode}"
+_EOF_
+
+chmod 755 "${script}"
+
+exit 0
