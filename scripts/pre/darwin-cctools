@@ -7,7 +7,7 @@ STAGE="$4"
 SOURCEFILE="$5"
 
 ### OpenDarwin CC Tools
-ODCCTOOLS_VERS='622.3od16+3rsk'
+ODCCTOOLS_VERS='622.3od16+4rsk'
 ODCCTOOLS_URL="http://www.rkeene.org/devel/odcctools-${ODCCTOOLS_VERS}.tar.gz"
 ODCCTOOLS_TARBALL="src/odcctools-${ODCCTOOLS_VERS}.tar.gz"
 ODCCTOOLS_DIR="odcctools-${ODCCTOOLS_VERS}"
@@ -40,7 +40,7 @@ gzip -dc "${ODCCTOOLS_TARBALL}" | tar -xf -
 
 cd "${ODCCTOOLS_DIR}" || exit 1
 
-if [ "${use_ld64}" = '1' ]; then
+if [ "${BUILD_CC_USE_LD64}" = '1' ]; then
 	ld64enable='enable'
 else
 	ld64enable='disable'

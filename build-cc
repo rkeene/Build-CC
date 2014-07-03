@@ -66,6 +66,7 @@ use_gnu_as='1'
 platforms=(
 	armel-unknown-linux-uclibc
 	mipsel-unknown-linux-uclibc
+	mips64-unknown-linux-gnu
 )
 
 untested_platforms=(
@@ -208,13 +209,14 @@ case "${CCNAME}" in
 	*-darwin*)
 		use_gnu_ld='0'
 		use_gnu_as='0'
-		use_ld64='0'
+		BUILD_CC_USE_LD64='0'
+		export BUILD_CC_USE_LD64
 
 		if echo "${CCNAME}" | egrep '^(x86_64|ppc64)-' >/dev/null; then
-			use_ld64='1'
+			BUILD_CC_USE_LD64='0'
 		fi
 
-		if [ "${use_ld64}" = '0' ]; then
+		if [ "${BUILD_CC_USE_LD64}" = '0' ]; then
 			ldcmd='ld'
 		else
 			ldcmd='ld64'
@@ -313,7 +315,7 @@ done
 
 ## Compile binutils for this platform if needed
 (
-	if [ -f "${CCDIR}/bin/${CCNAME}-objcopy" ]; then
+	if [ -f "${CCDIR}/bin/${CCNAME}-ar" ]; then
 		exit 0
 	fi
 
