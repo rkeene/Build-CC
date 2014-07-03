@@ -1,12 +1,16 @@
 #! /bin/bash
 
 # URLs and versions
-GLIBC_VERS='2.14'
+if [ -z "${GLIBC_VERS}" ]; then
+	GLIBC_VERS='2.14'
+fi
 GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_TARBALL="src/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_DIR="glibc-${GLIBC_VERS}"
 
-GLIBC_PORTS_VERS='2.13'
+if [ -z "${GLIBC_PORTS_VERS}" ]; then
+	GLIBC_PORTS_VERS='2.13'
+fi
 GLIBC_PORTS_URL="http://ftp.gnu.org/gnu/glibc/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
 GLIBC_PORTS_TARBALL="src/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
 GLIBC_PORTS_DIR="$(pwd)/glibc-ports-${GLIBC_PORTS_VERS}"
