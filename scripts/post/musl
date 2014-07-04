@@ -1,0 +1,73 @@
+#! /bin/bash
+
+# URLs and versions
+MUSL_VERS='1.1.3'
+MUSL_URL="http://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz"
+MUSL_TARBALL="src/musl-${MUSL_VERS}.tar.gz"
+MUSL_DIR="musl-${MUSL_VERS}"
+
+# Main script
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+
+# Clean
+if [ "$1" = "distclean" ]; then
+	rm -f "${MUSL_TARBALL}"
+
+	set -- clean
+fi
+
+if [ "$1" = "clean" ]; then
+	rm -rf "${MUSL_DIR}"
+	rm -rf musl-*-*-*
+
+	exit 0
+fi
+
+# Only build glibc for linuxmusl platforms
+if ! echo "${CCNAME}" | grep -- '-linux-musl' >/dev/null; then
+	exit 0
+fi
+
+# Only build the first time around
+if [ "${STAGE}" != "stage1" ]; then
+	exit 0
+fi
+
+# Do not compile if we already have built it
+if [ -e "${PREFIX}/lib/crt1.o" ]; then
+	exit 0
+fi
+
+# Inform the user of what we are doing
+echo ' * Building MUSL C Library'
+
+# Download source
+. 'scripts/common'
+
+CFLAGS=-fno-toplevel-reorder
+export CFLAGS
+
+if [ ! -d "${MUSL_DIR}" ]; then
+	download "${MUSL_URL}" "${MUSL_TARBALL}" || exit 1
+
+	gzip -dc "${MUSL_TARBALL}" | tar -xf -
+fi
+
+rm -rf "musl-${CCNAME}"
+cp -rp "${MUSL_DIR}" "musl-${CCNAME}"
+
+cd "musl-${CCNAME}" || exit 1
+./configure --prefix="${PREFIX}" --host="${CCNAME}" || exit 1
+
+${MAKE} 
+
+${MAKE} install
+
+cd .. || exit 1
+
+rm -rf "musl-${CCNAME}"
+
+exit 0

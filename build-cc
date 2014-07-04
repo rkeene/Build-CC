@@ -72,6 +72,7 @@ untested_platforms=(
 	powerpc-unknown-linux-gnu
 	powerpc-unknown-linux-uclibc
 	mips64-ubnt-linux-gnu
+	mips-unknown-linux-musl
 )
 
 if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
@@ -123,6 +124,7 @@ fi
 ## Versions
 case "${platform}" in
 	mips64-ubnt-linux-gnu)
+		# Ubiquiti uses an old version of glibc
 		GLIBC_VERS='2.11.3'
 		GLIBC_PORTS_VERS='2.11'
 		export GLIBC_VERS GLIBC_PORTS_VERS
