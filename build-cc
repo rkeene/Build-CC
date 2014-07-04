@@ -66,13 +66,13 @@ use_gnu_as='1'
 platforms=(
 	armel-unknown-linux-uclibc
 	mipsel-unknown-linux-uclibc
+	mips-unknown-linux-musl
 )
 
 untested_platforms=(
 	powerpc-unknown-linux-gnu
 	powerpc-unknown-linux-uclibc
 	mips64-ubnt-linux-gnu
-	mips-unknown-linux-musl
 )
 
 if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
