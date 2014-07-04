@@ -66,12 +66,12 @@ use_gnu_as='1'
 platforms=(
 	armel-unknown-linux-uclibc
 	mipsel-unknown-linux-uclibc
-	mips64-unknown-linux-gnu
 )
 
 untested_platforms=(
 	powerpc-unknown-linux-gnu
 	powerpc-unknown-linux-uclibc
+	mips64-ubnt-linux-gnu
 )
 
 if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
@@ -119,6 +119,15 @@ else
 		exit 1
 	fi
 fi
+
+## Versions
+case "${platform}" in
+	mips64-ubnt-linux-gnu)
+		GLIBC_VERS='2.11.3'
+		GLIBC_PORTS_VERS='2.11'
+		export GLIBC_VERS GLIBC_PORTS_VERS
+		;;
+esac
 
 ## URLs
 ### Binutils
