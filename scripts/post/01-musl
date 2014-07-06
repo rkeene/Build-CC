@@ -11,6 +11,7 @@ CCNAME="$1"
 CCDIR="$2"
 PREFIX="$3"
 STAGE="$4"
+FLAGS="$5"
 
 # Clean
 if [ "$1" = "distclean" ]; then
@@ -32,6 +33,14 @@ if [ -e "${PREFIX}/lib/musl-gcc.specs" ]; then
 fi
 
 if [ -e "${PREFIX}/musl/lib/musl-gcc.specs" ]; then
+	exit 0
+fi
+
+if [ -e "${PREFIX}/musl/lib32/musl-gcc.specs" ]; then
+	exit 0
+fi
+
+if [ -e "${PREFIX}/musl/lib64/musl-gcc.specs" ]; then
 	exit 0
 fi
 
@@ -57,12 +66,14 @@ case "${CCNAME}" in
 		shared='1'
 		musllibc='1'
 		fail='1'
+		muslwrapper=''
 		;;
 	*-linux-*|*-linux)
 		# Build for all Linux platforms so that MUSL will be available
 		shared='0'
 		musllibc='0'
 		fail='0'
+		muslwrapper="${CCDIR}/bin/${CCNAME}-gcc-musl"
 		if [ -z "${ARCH}" ]; then
 			# If MUSL doesn't support this platform, abort immediately
 			exit 0
@@ -81,14 +92,26 @@ if [ "${musllibc}" = '0' ]; then
 	PREFIX="${PREFIX}/musl"
 fi
 
-# Inform the user of what we are doing
-echo " * Building MUSL C Library (version ${MUSL_VERS})"
+# Determine if we are a multilib build
+archs='_'
+if echo " ${FLAGS} " | grep ' multilib ' >/dev/null; then
+	case "${CCNAME}" in
+		*-linux-musl)
+			echo "Error: Linux/MUSL toolchains do not currently multilib" >&2
+
+			exit 1
+			;;
+		x86_64-x32*|x32*|x86_64*x32|i?86-*)
+			archs="-m64 _"
+			;;
+		x86_64-*)
+			archs="-m32 _"
+			;;
+	esac
+fi
 
 # Download source
 . 'scripts/common'
-
-CFLAGS=-fno-toplevel-reorder
-export CFLAGS
 
 if [ ! -d "${MUSL_DIR}" ]; then
 	download "${MUSL_URL}" "${MUSL_TARBALL}" || exit $fail
@@ -96,29 +119,84 @@ if [ ! -d "${MUSL_DIR}" ]; then
 	gzip -dc "${MUSL_TARBALL}" | tar -xf -
 fi
 
-rm -rf "musl-${CCNAME}"
-cp -rp "${MUSL_DIR}" "musl-${CCNAME}"
-
-cd "musl-${CCNAME}" || exit $fail
-./configure --prefix="${PREFIX}" --bindir="${CCDIR}/bin" --host="${CCNAME}" --enable-gcc-wrapper ${MUSL_CONFIGURE_EXTRA} || exit $fail
-
-${MAKE} 
-
-${MAKE} install || exit $fail
-
-cd .. || exit $fail
-
-rm -rf "musl-${CCNAME}"
-
-if [ "${musllibc}" = '0' ]; then
-	musl="${CCDIR}/bin/${CCNAME}-gcc-musl"
-	cat << _EOF_ > "${musl}"
+if [ -n "${muslwrapper}" ]; then
+	cat << _EOF_ > "${muslwrapper}"
 #! /usr/bin/env bash
 
-exec '${CCDIR}/bin/${CCNAME}-gcc' "\$@" -specs '${PREFIX}/lib/musl-gcc.specs'
+_EOF_
+fi
+
+CC_SAVE="${CC}"
+for arch in ${archs}; do
+	arch_tag="native"
+	arch_host="${CCNAME}"
+	libdir="${PREFIX}/lib"
+	CC="${CC_SAVE}"
+
+	case "${arch}" in
+		-m32)
+			arch_tag="32bit"
+			arch_host="$(echo "${CCNAME}" | sed 's@^x86_64-@i486-@')"
+			libdir="${PREFIX}/lib32"
+			;;
+		-m64)
+			arch_tag="64bit"
+			arch_host="$(echo "${CCNAME}" | sed 's@^i.86-@x86_64-@;s@-x32-@-@;s@^x32-@x86_64-@')"
+			libdir="${PREFIX}/lib64"
+			;;
+	esac
+	
+	case "${arch}" in
+		-m*)
+			CC="${CC} ${arch}"
+
+			if [ -n "${muslwrapper}" ]; then
+				cat << _EOF_ >> "${muslwrapper}"
+if echo " \$* " | grep " ${arch} " >/dev/null; then
+	exec '${CCDIR}/bin/${CCNAME}-gcc' "\$@" -specs '${libdir}/musl-gcc.specs'
+
+	exit 1
+fi
+
+_EOF_
+			fi
+			;;
+	esac
+
+	# Inform the user of what we are doing
+	echo " * Building MUSL C Library (version ${MUSL_VERS}) for ${arch_host}"
+
+	rm -rf "musl-${CCNAME}-${arch_tag}"
+	cp -rp "${MUSL_DIR}" "musl-${CCNAME}-${arch_tag}"
+
+	cd "musl-${CCNAME}-${arch_tag}" || exit $fail
+
+	CFLAGS=-fno-toplevel-reorder
+	export CFLAGS
+	./configure --prefix="${PREFIX}" --bindir="${CCDIR}/bin" --libdir="${libdir}" --host="${arch_host}" --enable-gcc-wrapper ${MUSL_CONFIGURE_EXTRA} || exit $fail
+
+	${MAKE} 
+
+	${MAKE} install || exit $fail
+
+	cd .. || exit $fail
+
+	rm -rf "musl-${CCNAME}-${arch_tag}"
+
+done
+
+if [ -n "${muslwrapper}" ]; then
+	cat << _EOF_ >> "${muslwrapper}"
+
+exec '${CCDIR}/bin/${CCNAME}-gcc' "\$@" -specs '${libdir}/musl-gcc.specs'
+
 exit 1
 _EOF_
-	chmod +x "${musl}"
+	chmod +x "${muslwrapper}"
+
+	sed 's@ -nostdlib @ %{m32|mx32:;:-m elf_x86_64} %{m32:-m elf_i386} %{mx32:-m elf32_x86_64} -nostdlib @' "${libdir}/musl-gcc.specs" > "${libdir}/musl-gcc.specs.new"
+	cat "${libdir}/musl-gcc.specs.new" > "${libdir}/musl-gcc.specs"
+	rm -f "${libdir}/musl-gcc.specs.new"
 fi
 
 rm -f "${CCDIR}/bin/musl-gcc"
