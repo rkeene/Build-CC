@@ -1,0 +1,73 @@
+#! /usr/bin/env bash
+
+# URLs and versions
+ZLIB_VERS='1.2.8'
+ZLIB_URL="http://zlib.net/zlib-${ZLIB_VERS}.tar.gz"
+ZLIB_TARBALL="src/zlib-${ZLIB_VERS}.tar.gz"
+ZLIB_DIR="zlib-${ZLIB_VERS}"
+
+# Main script
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+
+# Clean
+if [ "$1" = "distclean" ]; then
+        rm -f "${ZLIB_TARBALL}"
+
+        set -- clean
+fi
+
+if [ "$1" = "clean" ]; then
+        rm -rf "${ZLIB_DIR}"
+        rm -rf zlib-*-*-*
+
+        exit 0
+fi
+
+# Only build in the final stage
+if [ "${STAGE}" != "stage2" ]; then
+        exit 0
+fi
+
+# Do not compile if we already have built it
+if [ -e "${PREFIX}/lib/libz.a" -o -e "${PREFIX}/lib/libz.so" ]; then
+        exit 0
+fi
+
+# Inform the user of what we are doing
+echo " * Building Zlib (version ${ZLIB_VERS})"
+
+# Download source
+. 'scripts/common'
+
+if [ ! -d "${ZLIB_DIR}" ]; then
+        download "${ZLIB_URL}" "${ZLIB_TARBALL}" || exit 1
+
+        gzip -dc "${ZLIB_TARBALL}" | tar -xf -
+fi
+
+rm -rf "zlib-${CCNAME}"
+cp -rp "${ZLIB_DIR}" "zlib-${CCNAME}"
+cd "zlib-${CCNAME}" || exit 1
+
+./configure --prefix="${PREFIX}" || exit 1
+
+${MAKE} 
+
+${MAKE} install || exit 1
+
+${MAKE} distclean
+
+./configure --prefix="${PREFIX}" --static || exit 1
+
+${MAKE} 
+
+${MAKE} install || exit 1
+
+cd ..
+
+rm -rf "zlib-${CCNAME}"
+
+exit 0
