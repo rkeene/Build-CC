@@ -26,23 +26,63 @@ if [ "$1" = "clean" ]; then
 	exit 0
 fi
 
-# Only build glibc for linuxmusl platforms
-if ! echo "${CCNAME}" | grep -- '-linux-musl' >/dev/null; then
-	exit 0
-fi
-
-# Only build the first time around
-if [ "${STAGE}" != "stage1" ]; then
-	exit 0
-fi
-
 # Do not compile if we already have built it
-if [ -e "${PREFIX}/lib/crt1.o" ]; then
+if [ -e "${PREFIX}/lib/musl-gcc.specs" ]; then
 	exit 0
+fi
+
+if [ -e "${PREFIX}/musl/lib/musl-gcc.specs" ]; then
+	exit 0
+fi
+
+# Determine if MUSL is supported on this platform
+## From "musl-1.1.3" configure
+ARCH=''
+case "${CCNAME}" in
+	mips64*|powerpc64*) ;;
+	arm*) ARCH=arm ;;
+	i?86*) ARCH=i386 ;;
+	x86_64-x32*|x32*|x86_64*x32) ARCH=x32 ;;
+	x86_64*) ARCH=x86_64 ;;
+	mips*) ARCH=mips ;;
+	microblaze*) ARCH=microblaze ;;
+	powerpc*) ARCH=powerpc ;;
+	sh[1-9bel-]*|sh|superh*) ARCH=sh ;;
+esac
+
+# Verify that this is a platform we build on
+case "${CCNAME}" in
+	*-linux-musl)
+		# Build MUSL libc for linuxmusl platforms
+		shared='1'
+		musllibc='1'
+		fail='1'
+		;;
+	*-linux-*|*-linux)
+		# Build for all Linux platforms so that MUSL will be available
+		shared='0'
+		musllibc='0'
+		fail='0'
+		if [ -z "${ARCH}" ]; then
+			# If MUSL doesn't support this platform, abort immediately
+			exit 0
+		fi
+		;;
+	*)
+		exit 0
+		;;
+esac
+
+if [ "${shared}" = '0' ]; then
+	MUSL_CONFIGURE_EXTRA="${MUSL_CONFIGURE_EXTRA} --disable-shared"
+fi
+
+if [ "${musllibc}" = '0' ]; then
+	PREFIX="${PREFIX}/musl"
 fi
 
 # Inform the user of what we are doing
-echo ' * Building MUSL C Library'
+echo " * Building MUSL C Library (version ${MUSL_VERS})"
 
 # Download source
 . 'scripts/common'
@@ -51,7 +91,7 @@ CFLAGS=-fno-toplevel-reorder
 export CFLAGS
 
 if [ ! -d "${MUSL_DIR}" ]; then
-	download "${MUSL_URL}" "${MUSL_TARBALL}" || exit 1
+	download "${MUSL_URL}" "${MUSL_TARBALL}" || exit $fail
 
 	gzip -dc "${MUSL_TARBALL}" | tar -xf -
 fi
@@ -59,15 +99,25 @@ fi
 rm -rf "musl-${CCNAME}"
 cp -rp "${MUSL_DIR}" "musl-${CCNAME}"
 
-cd "musl-${CCNAME}" || exit 1
-./configure --prefix="${PREFIX}" --host="${CCNAME}" || exit 1
+cd "musl-${CCNAME}" || exit $fail
+./configure --prefix="${PREFIX}" --bindir="${CCDIR}/bin" --host="${CCNAME}" --enable-gcc-wrapper ${MUSL_CONFIGURE_EXTRA} || exit $fail
 
 ${MAKE} 
 
-${MAKE} install
+${MAKE} install || exit $fail
 
-cd .. || exit 1
+cd .. || exit $fail
 
 rm -rf "musl-${CCNAME}"
+
+musl="${CCDIR}/bin/${CCNAME}-gcc-musl"
+cat << _EOF_ > "${musl}"
+#! /usr/bin/env bash
+
+exec '${CCNAME}-gcc' "\$@" -specs '${PREFIX}/lib/musl-gcc.specs'
+exit 1
+_EOF_
+chmod +x "${musl}"
+rm -f "${CCDIR}/bin/musl-gcc"
 
 exit 0
