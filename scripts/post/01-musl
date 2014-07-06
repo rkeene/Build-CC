@@ -110,14 +110,17 @@ cd .. || exit $fail
 
 rm -rf "musl-${CCNAME}"
 
-musl="${CCDIR}/bin/${CCNAME}-gcc-musl"
-cat << _EOF_ > "${musl}"
+if [ "${musllibc}" = '0' ]; then
+	musl="${CCDIR}/bin/${CCNAME}-gcc-musl"
+	cat << _EOF_ > "${musl}"
 #! /usr/bin/env bash
 
 exec '${CCDIR}/bin/${CCNAME}-gcc' "\$@" -specs '${PREFIX}/lib/musl-gcc.specs'
 exit 1
 _EOF_
-chmod +x "${musl}"
+	chmod +x "${musl}"
+fi
+
 rm -f "${CCDIR}/bin/musl-gcc"
 
 exit 0
