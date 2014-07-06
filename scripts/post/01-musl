@@ -183,6 +183,9 @@ _EOF_
 
 	rm -rf "musl-${CCNAME}-${arch_tag}"
 
+	sed 's@ -nostdlib @ %{m32|mx32:;:-m elf_x86_64} %{m32:-m elf_i386} %{mx32:-m elf32_x86_64} -nostdlib @' "${libdir}/musl-gcc.specs" > "${libdir}/musl-gcc.specs.new"
+	cat "${libdir}/musl-gcc.specs.new" > "${libdir}/musl-gcc.specs"
+	rm -f "${libdir}/musl-gcc.specs.new"
 done
 
 if [ -n "${muslwrapper}" ]; then
@@ -193,10 +196,6 @@ exec '${CCDIR}/bin/${CCNAME}-gcc' "\$@" -specs '${libdir}/musl-gcc.specs'
 exit 1
 _EOF_
 	chmod +x "${muslwrapper}"
-
-	sed 's@ -nostdlib @ %{m32|mx32:;:-m elf_x86_64} %{m32:-m elf_i386} %{mx32:-m elf32_x86_64} -nostdlib @' "${libdir}/musl-gcc.specs" > "${libdir}/musl-gcc.specs.new"
-	cat "${libdir}/musl-gcc.specs.new" > "${libdir}/musl-gcc.specs"
-	rm -f "${libdir}/musl-gcc.specs.new"
 fi
 
 rm -f "${CCDIR}/bin/musl-gcc"
