@@ -5,6 +5,13 @@ CCDIR="$2"
 PREFIX="$3"
 STAGE="$4"
 SOURCEFILE="$5"
+FLAGS="$6"
+
+if echo " ${FLAGS} " | grep ' ld64 ' >/dev/null; then
+	use_ld64='1'
+else
+	use_ld64='0'
+fi
 
 ### OpenDarwin CC Tools
 ODCCTOOLS_VERS='622.3od16+4rsk'
@@ -40,7 +47,7 @@ gzip -dc "${ODCCTOOLS_TARBALL}" | tar -xf -
 
 cd "${ODCCTOOLS_DIR}" || exit 1
 
-if [ "${BUILD_CC_USE_LD64}" = '1' ]; then
+if [ "${use_ld64}" = '1' ]; then
 	ld64enable='enable'
 else
 	ld64enable='disable'
