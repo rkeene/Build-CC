@@ -47,7 +47,7 @@ if [ "${STAGE}" != "stage1" ]; then
 fi
 
 # Inform the user of what we are doing
-echo ' * Building GNU C Library (glibc)'
+echo " * Building GNU C Library (glibc version ${GLIBC_VERS})"
 
 # Download source
 . 'scripts/common'
