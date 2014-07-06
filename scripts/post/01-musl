@@ -114,7 +114,7 @@ musl="${CCDIR}/bin/${CCNAME}-gcc-musl"
 cat << _EOF_ > "${musl}"
 #! /usr/bin/env bash
 
-exec '${CCNAME}-gcc' "\$@" -specs '${PREFIX}/lib/musl-gcc.specs'
+exec '${CCDIR}/bin/${CCNAME}-gcc' "\$@" -specs '${PREFIX}/lib/musl-gcc.specs'
 exit 1
 _EOF_
 chmod +x "${musl}"
