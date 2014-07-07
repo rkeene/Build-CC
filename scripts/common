@@ -36,6 +36,18 @@ function download () {
 	return 0
 }
 
+function fix_pkgconfig_file () {
+	local file
+
+	file="$1"
+
+	sed 's@^prefix=.*@prefix=/usr@' "${file}" > "${file}.new"
+	cat "${file}.new" > "${file}"
+	rm -f "${file}.new"
+
+	return 0
+}
+
 # Determine Linux and uClibc arch name
 ## alpha arm avr32 bfin cris e1 frv h8300 hppa i386 i960 ia64 m68k microblaze mips nios nios2 powerpc sh sh64 sparc v850 vax x86_64
 arch="$(echo "${CCNAME}" | cut -f 1 -d '-')"

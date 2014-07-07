@@ -70,4 +70,6 @@ cd ..
 
 rm -rf "zlib-${CCNAME}"
 
+fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/zlib.pc"
+
 exit 0

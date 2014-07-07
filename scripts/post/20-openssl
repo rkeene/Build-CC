@@ -131,4 +131,8 @@ cd ..
 
 rm -rf "openssl-${CCNAME}"
 
+fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/libcrypto.pc"
+fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/libssl.pc"
+fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/openssl.pc"
+
 exit 0
