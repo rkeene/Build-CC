@@ -1,0 +1,134 @@
+#! /usr/bin/env bash
+
+# URLs and versions
+OPENSSL_VERS='1.0.1h'
+OPENSSL_URL="http://www.openssl.org/source/openssl-1.0.1h.tar.gz"
+OPENSSL_TARBALL="src/openssl-${OPENSSL_VERS}.tar.gz"
+OPENSSL_DIR="openssl-${OPENSSL_VERS}"
+
+# Main script
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+
+# Clean
+if [ "$1" = "distclean" ]; then
+        rm -f "${OPENSSL_TARBALL}"
+
+        set -- clean
+fi
+
+if [ "$1" = "clean" ]; then
+        rm -rf "${OPENSSL_DIR}"
+        rm -rf openssl-*-*-*
+
+        exit 0
+fi
+
+# Only build in the final stage
+if [ "${STAGE}" != "stage2" ]; then
+        exit 0
+fi
+
+# Do not compile if we already have built it
+if [ -e "${PREFIX}/lib/libssl.a" -o -e "${PREFIX}/lib/libssl.so" ]; then
+        exit 0
+fi
+
+# Determine OpenSSL platform
+case "${CCNAME}" in
+	x86_64-*-linux-*|x86_64-*-linux|\
+		mips64-*-linux|mips64-*-linux-*)
+		openssl_platform="linux-generic64"
+		;;
+	*-linux|*-linux-*)
+		openssl_platform="linux-generic32"
+		;;
+	*)
+		# Unknown or unsupported platform
+		exit 0
+		;;
+esac
+
+# Inform the user of what we are doing
+echo " * Building OpenSSL (version ${OPENSSL_VERS})"
+
+# Download source
+. 'scripts/common'
+
+if [ ! -d "${OPENSSL_DIR}" ]; then
+        download "${OPENSSL_URL}" "${OPENSSL_TARBALL}" || exit 1
+
+        gzip -dc "${OPENSSL_TARBALL}" | tar -xf -
+
+	(
+		cd "${OPENSSL_DIR}" || exit 1
+
+		"${PATCH:-patch}" -p1 << \_EOF_
+--- openssl-1.0.1h/Configure	2014-06-05 04:44:33.000000000 -0500
++++ openssl-1.0.1h-1termios/Configure	2014-07-06 23:27:15.678514735 -0500
+@@ -345,7 +345,7 @@
+ ####
+ # *-generic* is endian-neutral target, but ./config is free to
+ # throw in -D[BL]_ENDIAN, whichever appropriate...
+-"linux-generic32","gcc:-DTERMIO -O3 -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
++"linux-generic32","gcc:-DTERMIOS -O3 -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+ "linux-ppc",	"gcc:-DB_ENDIAN -DTERMIO -O3 -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_RISC1 DES_UNROLL:${ppc32_asm}:linux32:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+ # It's believed that majority of ARM toolchains predefine appropriate -march.
+ # If you compiler does not, do complement config command line with one!
+@@ -355,7 +355,7 @@
+ "linux-elf",	"gcc:-DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG ${x86_gcc_des} ${x86_gcc_opts}:${x86_elf_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+ "linux-aout",	"gcc:-DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -march=i486 -Wall::(unknown):::BN_LLONG ${x86_gcc_des} ${x86_gcc_opts}:${x86_asm}:a.out",
+ ####
+-"linux-generic64","gcc:-DTERMIO -O3 -Wall::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
++"linux-generic64","gcc:-DTERMIOS -O3 -Wall::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+ "linux-ppc64",	"gcc:-m64 -DB_ENDIAN -DTERMIO -O3 -Wall::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_RISC1 DES_UNROLL:${ppc64_asm}:linux64:dlfcn:linux-shared:-fPIC:-m64:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):::64",
+ "linux-ia64",	"gcc:-DL_ENDIAN -DTERMIO -O3 -Wall::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_UNROLL DES_INT:${ia64_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+ "linux-ia64-ecc","ecc:-DL_ENDIAN -DTERMIO -O2 -Wall -no_cpprt::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_INT:${ia64_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+diff -uNr openssl-1.0.1h/crypto/ui/ui_openssl.c openssl-1.0.1h-1termios/crypto/ui/ui_openssl.c
+--- openssl-1.0.1h/crypto/ui/ui_openssl.c	2014-06-05 04:44:33.000000000 -0500
++++ openssl-1.0.1h-1termios/crypto/ui/ui_openssl.c	2014-07-06 23:28:08.428514735 -0500
+@@ -184,6 +184,7 @@
+  * TERMIO, TERMIOS, VMS, MSDOS and SGTTY
+  */
+ 
++#if !defined(TERMIOS) && !defined(TERMIO) && !defined(SGTTY)
+ #if defined(__sgi) && !defined(TERMIOS)
+ # define TERMIOS
+ # undef  TERMIO
+@@ -219,6 +220,7 @@
+ #undef TERMIO
+ #undef SGTTY
+ #endif
++#endif
+ 
+ #ifdef TERMIOS
+ # include <termios.h>
+_EOF_
+	)
+fi
+
+rm -rf "openssl-${CCNAME}"
+cp -rp "${OPENSSL_DIR}" "openssl-${CCNAME}"
+cd "openssl-${CCNAME}" || exit 1
+
+./Configure --prefix="${PREFIX}" no-asm no-dso "${openssl_platform}"  || exit 1
+
+${MAKE} 
+
+${MAKE} install || exit 1
+
+${MAKE} distclean
+
+./Configure --prefix="${PREFIX}" no-shared no-asm no-dso no-krb5 "${openssl_platform}"  || exit 1
+
+${MAKE} 
+
+${MAKE} install || exit 1
+
+cd ..
+
+rm -rf "openssl-${CCNAME}"
+
+exit 0
