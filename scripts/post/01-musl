@@ -95,11 +95,8 @@ fi
 # Determine if we are a multilib build
 archs='_'
 if echo " ${FLAGS} " | grep ' multilib ' >/dev/null; then
-	archs="$(${CC} -dumpspecs | awk '/\*multilib_matches:/{ getline; print }' | tr ';' $'\n' | grep -v '^ *$' | awk '{ print $1 }')"
-	if [ -n "${archs}" ]; then
-		default_arch="$(${CC} -dumpspecs | awk '/\*multilib_defaults:/{ getline; print $1; exit 0 }' )"
-		archs="$(echo "${archs}" | sed 's@^'"${default_arch}"'$@_@' | sort -u)"
-	else
+	archs="$(${CC} -print-multi-lib | grep '^[^;]*/' | sed 's/^.*;//;s/^@/-/;s@^ *$@_@')"
+	if [ -z "${archs}" ]; then
 		archs='_'
 	fi
 fi
@@ -120,6 +117,7 @@ for arch in ${archs}; do
 	libdir="${PREFIX}/lib"
 	CC="${CC_SAVE}"
 
+	# Options for explicit arch
 	case "${arch}" in
 		-m32)
 			arch_tag="32bit"
@@ -129,17 +127,30 @@ for arch in ${archs}; do
 			arch_tag="64bit"
 			arch_host="$(echo "${CCNAME}" | sed 's@^i.86-@x86_64-@;s@-x32-@-@;s@^x32-@x86_64-@')"
 			;;
-	esac
-	
-	case "${arch}" in
-		-m*)
-			arch_flag="$(echo "${arch}" | sed 's@^-m@m@')"
-			arch_dir="$(${CC} -dumpspecs | awk '/\*multilib:/{ getline; print }' | tr ';' $'\n' | sed 's@![^ ]*@@g;s@   *@ @g;s@ *$@@' | grep ':' | cut -f 2- -d : | awk '/ '"${arch_flag}"'$/{ print $1 }')"
+		_)
+			;;
+		*)
+			echo "[MUSL LIBC] Unknown architecture: ${arch}, skipping" >&2
 
-			CC="${CC} ${arch}"
-			libdir="${PREFIX}/lib/${arch_dir}"
+			if [ "${fail}" = '1' ]; then
+				echo "Aborting because this is a MUSL libc platform and we should have MUSL libc for all available architectures" >&2
+
+				exit 1
+			fi
+
+			continue
 			;;
 	esac
+
+	# Update configuration based on current (implicit or explicit) architecture
+	case "${arch}" in
+		-m*)
+			CC="${CC} ${arch}"
+			;;
+	esac
+
+	arch_dir="$(${CC} -print-multi-os-directory)"
+	libdir="${PREFIX}/lib/${arch_dir}"
 
 	# Inform the user of what we are doing
 	echo " * Building MUSL C Library (version ${MUSL_VERS}) for ${arch_host}"
