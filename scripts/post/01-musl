@@ -46,17 +46,17 @@ fi
 
 # Determine if MUSL is supported on this platform
 ## From "musl-1.1.3" configure
-ARCH=''
+MUSL_ARCH=''
 case "${CCNAME}" in
 	mips64*|powerpc64*) ;;
-	arm*) ARCH=arm ;;
-	i?86*) ARCH=i386 ;;
-	x86_64-x32*|x32*|x86_64*x32) ARCH=x32 ;;
-	x86_64*) ARCH=x86_64 ;;
-	mips*) ARCH=mips ;;
-	microblaze*) ARCH=microblaze ;;
-	powerpc*) ARCH=powerpc ;;
-	sh[1-9bel-]*|sh|superh*) ARCH=sh ;;
+	arm*) MUSL_ARCH=arm ;;
+	i?86*) MUSL_ARCH=i386 ;;
+	x86_64-x32*|x32*|x86_64*x32) MUSL_ARCH=x32 ;;
+	x86_64*) MUSL_ARCH=x86_64 ;;
+	mips*) MUSL_ARCH=mips ;;
+	microblaze*) MUSL_ARCH=microblaze ;;
+	powerpc*) MUSL_ARCH=powerpc ;;
+	sh[1-9bel-]*|sh|superh*) MUSL_ARCH=sh ;;
 esac
 
 # Verify that this is a platform we build on
@@ -74,7 +74,7 @@ case "${CCNAME}" in
 		musllibc='0'
 		fail='0'
 		muslwrapper="${CCDIR}/bin/${CCNAME}-gcc-musl"
-		if [ -z "${ARCH}" ]; then
+		if [ -z "${MUSL_ARCH}" ]; then
 			# If MUSL doesn't support this platform, abort immediately
 			exit 0
 		fi
@@ -95,19 +95,13 @@ fi
 # Determine if we are a multilib build
 archs='_'
 if echo " ${FLAGS} " | grep ' multilib ' >/dev/null; then
-	case "${CCNAME}" in
-		*-linux-musl)
-			echo "Error: Linux/MUSL toolchains do not currently multilib" >&2
-
-			exit 1
-			;;
-		x86_64-x32*|x32*|x86_64*x32|i?86-*)
-			archs="-m64 _"
-			;;
-		x86_64-*)
-			archs="-m32 _"
-			;;
-	esac
+	archs="$(${CC} -dumpspecs | awk '/\*multilib_matches:/{ getline; print }' | tr ';' $'\n' | grep -v '^ *$' | awk '{ print $1 }')"
+	if [ -n "${archs}" ]; then
+		default_arch="$(${CC} -dumpspecs | awk '/\*multilib_defaults:/{ getline; print $1; exit 0 }' )"
+		archs="$(echo "${archs}" | sed 's@^'"${default_arch}"'$@_@' | sort -u)"
+	else
+		archs='_'
+	fi
 fi
 
 # Download source
@@ -117,13 +111,6 @@ if [ ! -d "${MUSL_DIR}" ]; then
 	download "${MUSL_URL}" "${MUSL_TARBALL}" || exit $fail
 
 	gzip -dc "${MUSL_TARBALL}" | tar -xf -
-fi
-
-if [ -n "${muslwrapper}" ]; then
-	cat << _EOF_ > "${muslwrapper}"
-#! /usr/bin/env bash
-
-_EOF_
 fi
 
 CC_SAVE="${CC}"
@@ -137,29 +124,20 @@ for arch in ${archs}; do
 		-m32)
 			arch_tag="32bit"
 			arch_host="$(echo "${CCNAME}" | sed 's@^x86_64-@i486-@')"
-			libdir="${PREFIX}/lib32"
 			;;
 		-m64)
 			arch_tag="64bit"
 			arch_host="$(echo "${CCNAME}" | sed 's@^i.86-@x86_64-@;s@-x32-@-@;s@^x32-@x86_64-@')"
-			libdir="${PREFIX}/lib64"
 			;;
 	esac
 	
 	case "${arch}" in
 		-m*)
+			arch_flag="$(echo "${arch}" | sed 's@^-m@m@')"
+			arch_dir="$(${CC} -dumpspecs | awk '/\*multilib:/{ getline; print }' | tr ';' $'\n' | sed 's@![^ ]*@@g;s@   *@ @g;s@ *$@@' | grep ':' | cut -f 2- -d : | awk '/ '"${arch_flag}"'$/{ print $1 }')"
+
 			CC="${CC} ${arch}"
-
-			if [ -n "${muslwrapper}" ]; then
-				cat << _EOF_ >> "${muslwrapper}"
-if echo " \$* " | grep " ${arch} " >/dev/null; then
-	exec '${CCDIR}/bin/${CCNAME}-gcc' "\$@" -specs '${libdir}/musl-gcc.specs'
-
-	exit 1
-fi
-
-_EOF_
-			fi
+			libdir="${PREFIX}/lib/${arch_dir}"
 			;;
 	esac
 
@@ -182,14 +160,48 @@ _EOF_
 	cd .. || exit $fail
 
 	rm -rf "musl-${CCNAME}-${arch_tag}"
-
-	sed 's@ -nostdlib @ %{m32|mx32:;:-m elf_x86_64} %{m32:-m elf_i386} %{mx32:-m elf32_x86_64} -nostdlib @' "${libdir}/musl-gcc.specs" > "${libdir}/musl-gcc.specs.new"
-	cat "${libdir}/musl-gcc.specs.new" > "${libdir}/musl-gcc.specs"
-	rm -f "${libdir}/musl-gcc.specs.new"
 done
 
 if [ -n "${muslwrapper}" ]; then
+	if false; then
+		# XXX: Work In Progress; We need to generate a multilib compatible spec file
+		cat << _EOF_ > ${libdir}/musl-gcc.specs
+%rename cpp_options old_cpp_options
+
+*cpp_options:
+-nostdinc -isystem ${prefix}/include -isystem include%s %(old_cpp_options)
+
+*cc1:
+%(cc1_cpu) -nostdinc -isystem ${prefix}/include -isystem include%s
+
+*link_libgcc:
+-L${libdir} -L .%s
+
+*libgcc:
+libgcc.a%s %:if-exists(libgcc_eh.a%s)
+
+*startfile:
+%{!shared: ${libdir}/%{pie:S}crt1.o} ${libdir}/crti.o %{shared|pie:crtbeginS.o%s;:crtbegin.o%s}
+
+*endfile:
+%{shared|pie:crtendS.o%s;:crtend.o%s} ${libdir}/crtn.o
+
+*link:
+-dynamic-linker /lib/ld-musl-${MUSL_ARCH}.so.1 %{m32|mx32:;:-m elf_x86_64} %{m32:-m elf_i386} %{mx32:-m elf32_x86_64} -nostdlib %{shared:-shared} %{static:-static} %{rdynamic:-export-dynamic}
+
+*esp_link:
+
+
+*esp_options:
+
+
+*esp_cpp_options:
+
+_EOF_
+	fi
+
 	cat << _EOF_ >> "${muslwrapper}"
+#! /usr/bin/env bash
 
 exec '${CCDIR}/bin/${CCNAME}-gcc' "\$@" -specs '${libdir}/musl-gcc.specs'
 
