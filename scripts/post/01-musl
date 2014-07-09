@@ -108,6 +108,28 @@ if [ ! -d "${MUSL_DIR}" ]; then
 	download "${MUSL_URL}" "${MUSL_TARBALL}" || exit $fail
 
 	gzip -dc "${MUSL_TARBALL}" | tar -xf -
+
+	# Merge headers for i386/x86_64 to enable multilib support
+	(
+		cd "${MUSL_DIR}/arch/x86_64" || exit 1
+		find . -type f | while read file; do
+			diff -u "${file}" "../i386/${file}" >/dev/null && continue
+
+			(
+				echo '#if __SIZEOF_POINTER__ == 8'
+				cat "${file}"
+				echo '#else'
+				cat "../i386/${file}"
+				echo '#endif'
+			) > "${file}.new"
+			cat "${file}.new" > "${file}"
+			rm -f "${file}.new"
+		done
+
+		cd .. || exit 1
+		rm -rf i386
+		cp -rp x86_64 i386
+	) || exit 1
 fi
 
 CC_SAVE="${CC}"
