@@ -28,19 +28,7 @@ if [ "$1" = "clean" ]; then
 fi
 
 # Do not compile if we already have built it
-if [ -e "${PREFIX}/lib/musl-gcc.specs" ]; then
-	exit 0
-fi
-
-if [ -e "${PREFIX}/musl/lib/musl-gcc.specs" ]; then
-	exit 0
-fi
-
-if [ -e "${PREFIX}/musl/lib32/musl-gcc.specs" ]; then
-	exit 0
-fi
-
-if [ -e "${PREFIX}/musl/lib64/musl-gcc.specs" ]; then
+if find "${PREFIX}" -name 'musl-gcc.specs' 2>/dev/null | grep '^' >/dev/null; then
 	exit 0
 fi
 
@@ -95,7 +83,7 @@ fi
 # Determine if we are a multilib build
 archs='_'
 if echo " ${FLAGS} " | grep ' multilib ' >/dev/null; then
-	archs="$(${CC} -print-multi-lib | grep '^[^;]*/' | sed 's/^.*;//;s/^@/-/;s@^ *$@_@')"
+	archs="$(${CC} -print-multi-lib | grep -v '^[^;]*/' | sed 's/^.*;//;s/^@/-/;s@^ *$@_@')"
 	if [ -z "${archs}" ]; then
 		archs='_'
 	fi
