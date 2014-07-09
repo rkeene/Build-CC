@@ -46,19 +46,22 @@ fi
 # Inform the user of what we are doing
 echo " * Building Linux kernel headers for ${arch}"
 
-download "${LINUX_URL}" "${LINUX_TARBALL}" || exit 1
+if [ ! -d "${LINUX_DIR}" ]; then
+	download "${LINUX_URL}" "${LINUX_TARBALL}" || exit 1
 
-rm -rf "${LINUX_DIR}"
-bzip2 -dc "${LINUX_TARBALL}" | tar -xf -
+	bzip2 -dc "${LINUX_TARBALL}" | tar -xf -
+fi
+
+cp -rp "${LINUX_DIR}" "${LINUX_DIR}-${CCNAME}"
 
 (
-	cd "${LINUX_DIR}" || exit 1
+	cd "${LINUX_DIR}-${CCNAME}" || exit 1
 
 	${MAKE_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" defconfig || exit 1
 
 	${MAKE_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" INSTALL_HDR_PATH="${PREFIX}" headers_install || exit 1
 ) || exit 1
 
-rm -rf "${LINUX_DIR}"
+rm -rf "${LINUX_DIR}-${CCNAME}"
 
 exit 0
