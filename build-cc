@@ -296,9 +296,13 @@ STAGE="$2"
 if [ -z "${STAGE}" ]; then
 	if [ -f "${PLATFORM_TARBALL}" ]; then
 		STAGE="stage2"
+		STAGE_INIT='stage2'
 	else
 		STAGE="stage1"
+		STAGE_INIT='stage1'
 	fi
+else
+	STAGE_INIT='stage1'
 fi
 
 ### Normalize stage names
@@ -315,6 +319,22 @@ fi
 
 if [ "${use_ld64}" = '1' ]; then
 	FLAGS="${FLAGS} ld64"
+fi
+
+if [ "${STAGE_INIT}" = 'stage1' ]; then
+	FLAGS="${FLAGS} from_stage1"
+else
+	FLAGS="${FLAGS} from_stage2"
+fi
+
+## Stage 1 platforms that require particular configuration
+if [ "${STAGE_INIT}" = 'stage1' ]; then
+	case "${platform}" in
+		*-linux-musl)
+			# MUSL libc platforms do not support GCC sanitizer (which relies on glibc features)
+			BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --disable-libsanitizer --disable-target-libsanitizer"
+			;;
+	esac
 fi
 
 ### Do pre-compilation steps
