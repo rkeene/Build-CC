@@ -37,19 +37,24 @@ if [ -e "${PREFIX}/lib/libssl.a" -o -e "${PREFIX}/lib/libssl.so" ]; then
 fi
 
 # Determine OpenSSL platform
-case "${CCNAME}" in
-	x86_64-*-linux-*|x86_64-*-linux|\
-		mips64-*-linux|mips64-*-linux-*)
-		openssl_platform="linux-generic64"
-		;;
-	*-linux|*-linux-*)
-		openssl_platform="linux-generic32"
-		;;
-	*)
-		# Unknown or unsupported platform
-		exit 0
-		;;
-esac
+function openssl_platform() {
+	case "$1" in
+		x86_64-*-linux-*|x86_64-*-linux|\
+			mips64-*-linux|mips64-*-linux-*)
+			echo "linux-generic64"
+			;;
+		*-linux|*-linux-*)
+			echo "linux-generic32"
+			;;
+		*)
+			# Unknown or unsupported platform
+			return 1
+			;;
+	esac
+
+	return 0
+}
+openssl_platform "${CCNAME}" >/dev/null || exit 0
 
 # Inform the user of what we are doing
 echo " * Building OpenSSL (version ${OPENSSL_VERS})"
@@ -109,30 +114,39 @@ _EOF_
 	)
 fi
 
-rm -rf "openssl-${CCNAME}"
-cp -rp "${OPENSSL_DIR}" "openssl-${CCNAME}"
-cd "openssl-${CCNAME}" || exit 1
+CC_SAVE="${CC}"
+for arch in $(multilib); do
+	CC="${CC_SAVE} $(multilib --cflags "${arch}")"
+	arch_host="$(multilib --host "${arch}")"
+	arch_libdir="$(multilib --libdir "${arch}")"
 
-./Configure --prefix="${PREFIX}" no-asm no-krb5 shared "${openssl_platform}"  || exit 1
+	openssl_platform="$(openssl_platform "${arch_host}")" || continue
 
-${MAKE} 
+	rm -rf "openssl-${CCNAME}-${arch_host}"
+	cp -rp "${OPENSSL_DIR}" "openssl-${CCNAME}-${arch_host}"
+	cd "openssl-${CCNAME}-${arch_host}" || exit 1
 
-${MAKE} install || exit 1
+	./Configure --prefix="${PREFIX}" --libdir="${arch_libdir}" no-asm no-krb5 shared "${openssl_platform}"  || exit 1
 
-${MAKE} distclean
+	${MAKE}
 
-./Configure --prefix="${PREFIX}" no-shared no-asm no-dso no-krb5 "${openssl_platform}"  || exit 1
+	${MAKE} install || exit 1
 
-${MAKE} 
+	${MAKE} distclean
 
-${MAKE} install || exit 1
+	./Configure --prefix="${PREFIX}" --libdir="${arch_libdir}" no-shared no-asm no-dso no-krb5 "${openssl_platform}"  || exit 1
 
-cd ..
+	${MAKE} 
 
-rm -rf "openssl-${CCNAME}"
+	${MAKE} install || exit 1
 
-fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/libcrypto.pc"
-fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/libssl.pc"
-fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/openssl.pc"
+	cd ..
+
+	rm -rf "openssl-${CCNAME}-${arch_host}"
+
+	fix_pkgconfig_file "${arch_libdir}/pkgconfig/libcrypto.pc"
+	fix_pkgconfig_file "${arch_libdir}/pkgconfig/libssl.pc"
+	fix_pkgconfig_file "${arch_libdir}/pkgconfig/openssl.pc"
+done
 
 exit 0
