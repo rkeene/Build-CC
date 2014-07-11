@@ -48,27 +48,34 @@ if [ ! -d "${ZLIB_DIR}" ]; then
         gzip -dc "${ZLIB_TARBALL}" | tar -xf -
 fi
 
-rm -rf "zlib-${CCNAME}"
-cp -rp "${ZLIB_DIR}" "zlib-${CCNAME}"
-cd "zlib-${CCNAME}" || exit 1
+CC_SAVE="${CC}"
+for arch in $(multilib); do
+	CC="${CC_SAVE} $(multilib --cflags "${arch}")"
+	arch_host="$(multilib --host "${arch}")"
+	arch_libdir="$(multilib --libdir "${arch}")"
 
-./configure --prefix="${PREFIX}" || exit 1
+	rm -rf "zlib-${CCNAME}-${arch_host}"
+	cp -rp "${ZLIB_DIR}" "zlib-${CCNAME}-${arch_host}"
+	cd "zlib-${CCNAME}-${arch_host}" || exit 1
 
-${MAKE} 
+	./configure --prefix="${PREFIX}" --libdir="${arch_libdir}" || exit 1
 
-${MAKE} install || exit 1
+	${MAKE} 
 
-${MAKE} distclean
+	${MAKE} install || exit 1
 
-./configure --prefix="${PREFIX}" --static || exit 1
+	${MAKE} distclean
 
-${MAKE} 
+	./configure --prefix="${PREFIX}" --libdir="${arch_libdir}" --static || exit 1
 
-${MAKE} install || exit 1
+	${MAKE} 
 
-cd ..
+	${MAKE} install || exit 1
 
-rm -rf "zlib-${CCNAME}"
+	cd ..
+
+	rm -rf "zlib-${CCNAME}-${arch_host}"
+done
 
 fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/zlib.pc"
 

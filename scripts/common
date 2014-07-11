@@ -48,6 +48,96 @@ function fix_pkgconfig_file () {
 	return 0
 }
 
+# Expects:
+#    CC
+#    CCNAME
+#    FLAGS
+#    PREFIX
+function multilib () {
+	local arch
+	local mode
+	local archs host libdir cflags
+
+	mode='cflags'
+
+	if [ "$1" = '--libdir' ]; then
+		mode='libdir'
+
+		shift
+	fi
+
+	if [ "$1" = '--host' ]; then
+		mode='host'
+
+		shift
+	fi
+
+	if [ "$1" = '--cflags' ]; then
+		mode='cflags'
+
+		shift
+	fi
+
+	arch="$1"
+
+	# If no architecture is given, return the list of architectures
+	if [ -z "${arch}" ]; then
+		mode='list'
+	else
+		cflags=""
+		if [ "${arch}" != '_' ]; then
+			cflags="${arch}"
+		fi
+	fi
+
+	case "${mode}" in
+		list)
+			archs='_'
+			if echo " ${FLAGS} " | grep ' multilib ' >/dev/null; then
+				archs="$(${CC} -print-multi-lib | grep -v '^[^;]*/' | sed 's/^.*;//;s/^@/-/;s@^ *$@_@')"
+				if [ -z "${archs}" ]; then
+					archs='_'
+				fi
+			fi
+
+			echo "${archs}"
+
+			return 0
+			;;
+		cflags)
+			echo "${cflags}"
+
+			return 0
+			;;
+		libdir)
+			libdir="${PREFIX}/lib/$(${CC} ${cflags} -print-multi-os-directory)"
+
+			echo "${libdir}"
+
+			return 0
+			;;
+		host)
+			if [ "${arch}" = '_' ]; then
+				echo "${CCNAME}"
+				return 0
+			fi
+
+			case "${arch}" in
+				-m32)
+					host="$(echo "${CCNAME}" | sed 's@^x86_64-@i486-@;s@^sparcv9-@sparc-@')"
+					;;
+				-m64)
+					host="$(echo "${CCNAME}" | sed 's@^i.86-@x86_64-@;s@-x32-@-@;s@^x32-@x86_64-@;s@^sparc-@sparcv9-@')"
+					;;
+			esac
+
+			echo "${host}"
+
+			return 0
+			;;
+	esac
+}
+
 # Determine Linux and uClibc arch name
 ## alpha arm avr32 bfin cris e1 frv h8300 hppa i386 i960 ia64 m68k microblaze mips nios nios2 powerpc sh sh64 sparc v850 vax x86_64
 arch="$(echo "${CCNAME}" | cut -f 1 -d '-')"

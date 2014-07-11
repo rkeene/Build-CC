@@ -81,13 +81,7 @@ if [ "${musllibc}" = '0' ]; then
 fi
 
 # Determine if we are a multilib build
-archs='_'
-if echo " ${FLAGS} " | grep ' multilib ' >/dev/null; then
-	archs="$(${CC} -print-multi-lib | grep -v '^[^;]*/' | sed 's/^.*;//;s/^@/-/;s@^ *$@_@')"
-	if [ -z "${archs}" ]; then
-		archs='_'
-	fi
-fi
+archs="$(multilib)"
 
 # Download source
 . 'scripts/common'
@@ -122,53 +116,20 @@ fi
 
 CC_SAVE="${CC}"
 for arch in ${archs}; do
-	arch_tag="native"
-	arch_host="${CCNAME}"
-	libdir="${PREFIX}/lib"
 	CC="${CC_SAVE}"
 
-	# Options for explicit arch
-	case "${arch}" in
-		-m32)
-			arch_tag="32bit"
-			arch_host="$(echo "${CCNAME}" | sed 's@^x86_64-@i486-@')"
-			;;
-		-m64)
-			arch_tag="64bit"
-			arch_host="$(echo "${CCNAME}" | sed 's@^i.86-@x86_64-@;s@-x32-@-@;s@^x32-@x86_64-@')"
-			;;
-		_)
-			;;
-		*)
-			echo "[MUSL LIBC] Unknown architecture: ${arch}, skipping" >&2
-
-			if [ "${fail}" = '1' ]; then
-				echo "Aborting because this is a MUSL libc platform and we should have MUSL libc for all available architectures" >&2
-
-				exit 1
-			fi
-
-			continue
-			;;
-	esac
-
-	# Update configuration based on current (implicit or explicit) architecture
-	case "${arch}" in
-		-m*)
-			CC="${CC} ${arch}"
-			;;
-	esac
-
-	arch_dir="$(${CC} -print-multi-os-directory)"
-	libdir="${PREFIX}/lib/${arch_dir}"
+	# Options for multilib
+	arch_host="$(multilib --host "${arch}")"
+	libdir="$(multilib --libdir "${arch}")"
+	CC="${CC} $(multilib --cflags "${arch}")"
 
 	# Inform the user of what we are doing
 	echo " * Building MUSL C Library (version ${MUSL_VERS}) for ${arch_host}"
 
-	rm -rf "musl-${CCNAME}-${arch_tag}"
-	cp -rp "${MUSL_DIR}" "musl-${CCNAME}-${arch_tag}"
+	rm -rf "musl-${CCNAME}-${arch_host}"
+	cp -rp "${MUSL_DIR}" "musl-${CCNAME}-${arch_host}"
 
-	cd "musl-${CCNAME}-${arch_tag}" || exit $fail
+	cd "musl-${CCNAME}-${arch_host}" || exit $fail
 
 	CFLAGS=-fno-toplevel-reorder
 	export CFLAGS
@@ -180,7 +141,7 @@ for arch in ${archs}; do
 
 	cd .. || exit $fail
 
-	rm -rf "musl-${CCNAME}-${arch_tag}"
+	rm -rf "musl-${CCNAME}-${arch_host}"
 done
 
 if [ -n "${muslwrapper}" ]; then
