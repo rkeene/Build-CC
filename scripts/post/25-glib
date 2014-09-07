@@ -67,7 +67,7 @@ for arch in $(multilib); do
 	arch_libdir="$(multilib --libdir "${arch}")"
 
 	# Do not compile if we already have built it
-	if [ -e "${arch_libdir}/libglib.a" -o -e "${arch_libdir}/libglib.so" ]; then
+	if [ -e "${arch_libdir}/libglib-2.0.a" -o -e "${arch_libdir}/libglib-2.0.so" ]; then
 		continue
 	fi
 

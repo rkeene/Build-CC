@@ -41,7 +41,7 @@ function fix_pkgconfig_file () {
 
 	file="$1"
 
-	sed 's@^prefix=.*@prefix=/usr@' "${file}" > "${file}.new"
+	sed 's@^prefix=.*@prefix=/usr@;s@\$(libdir)@${libdir}@g' "${file}" > "${file}.new"
 	cat "${file}.new" > "${file}"
 	rm -f "${file}.new"
 
