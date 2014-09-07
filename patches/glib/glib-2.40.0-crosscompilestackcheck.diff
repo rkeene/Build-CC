@@ -51,11 +51,12 @@ diff -uNr glib-2.40.0.orig/gobject/gsignal.c glib-2.40.0-1crosscompilestackcheck
  }
  
 +#if G_HAVE_GROWING_STACK == -1
-+void G_HAVE_GROWING_STACK_FUNC1(int i, int **b) {
++void G_HAVE_GROWING_STACK_FUNC1(int i, volatile int **b);
++void G_HAVE_GROWING_STACK_FUNC1(int i, volatile int **b) {
 +	volatile int x = 5;
 +
 +	if (i == 0) {
-+		*b = &x
++		*b = &x;
 +	} else {
 +		G_HAVE_GROWING_STACK_FUNC1(i - 1, b);
 +	}
@@ -64,9 +65,9 @@ diff -uNr glib-2.40.0.orig/gobject/gsignal.c glib-2.40.0-1crosscompilestackcheck
 +}
 +
 +static inline int G_HAVE_GROWING_STACK_FUNC(void) {
-+        volatile int *a = 0, *b = 0;
++	volatile int *a = 0, *b = 0;
 +	volatile int y = 7;
-+	static retval = -1;
++	static int retval = -1;
 +
 +	if (retval != -1) {
 +		return(retval);
@@ -83,7 +84,6 @@ diff -uNr glib-2.40.0.orig/gobject/gsignal.c glib-2.40.0-1crosscompilestackcheck
 +#else
 +#  define G_HAVE_GROWING_STACK_FUNC() G_HAVE_GROWING_STACK
 +#endif
-+static inline int 
 +
  static inline Emission*
  emission_find_innermost (gpointer instance)
