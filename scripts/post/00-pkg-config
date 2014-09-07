@@ -18,9 +18,10 @@ _EOF_
 
 cat << \_EOF_ >> "${script}"
 
-unset PKG_CONFIG_DIR PKG_CONFIG_LIBDIR PKG_CONFIG_SYSROOT_DIR
+unset PKG_CONFIG_DIR PKG_CONFIG_LIBDIR PKG_CONFIG_SYSROOT_DIR PKG_CONFIG_PATH
 
-PKG_CONFIG_LIBDIR="${sysroot}/lib/pkgconfig"
+libdir="${sysroot}/lib/$(${CC} ${CFLAGS} -print-multi-os-directory)"
+PKG_CONFIG_LIBDIR="${libdir}/pkgconfig"
 export PKG_CONFIG_LIBDIR
 
 result="$(pkg-config "$@")"
