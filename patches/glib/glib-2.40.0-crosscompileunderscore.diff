@@ -1,0 +1,27 @@
+diff -uNr glib-2.40.0.orig/configure glib-2.40.0-1crosscompileunderscore/configure
+--- glib-2.40.0.orig/configure	2014-03-24 13:54:23.000000000 -0500
++++ glib-2.40.0-1crosscompileunderscore/configure	2014-09-06 20:51:11.287507258 -0500
+@@ -25064,10 +25064,7 @@
+ else
+ 
+ 		if test "$cross_compiling" = yes; then :
+-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+-as_fn_error $? "cannot run test program while cross compiling
+-See \`config.log' for more details" "$LINENO" 5; }
++  glib_cv_uscore=no
+ else
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+diff -uNr glib-2.40.0.orig/configure.ac glib-2.40.0-1crosscompileunderscore/configure.ac
+--- glib-2.40.0.orig/configure.ac	2014-03-24 13:53:31.000000000 -0500
++++ glib-2.40.0-1crosscompileunderscore/configure.ac	2014-09-06 20:49:31.027507258 -0500
+@@ -1545,7 +1545,7 @@
+ 		}],
+ 			[glib_cv_uscore=yes],
+ 			[glib_cv_uscore=no],
+-			[])
++			[glib_cv_uscore=no])
+ 		rm -f plugin.c plugin.$ac_objext plugin.lo
+ 	])
+         GLIB_ASSERT_SET(glib_cv_uscore)

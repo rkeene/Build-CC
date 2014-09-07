@@ -1,0 +1,42 @@
+diff -uNr glib-2.40.0.orig/aclocal.m4 glib-2.40.0-1dontcallautoconf/aclocal.m4
+--- glib-2.40.0.orig/aclocal.m4	2014-03-24 13:54:21.000000000 -0500
++++ glib-2.40.0-1dontcallautoconf/aclocal.m4	2014-09-06 21:05:58.837507258 -0500
+@@ -695,10 +695,10 @@
+ # Some tools Automake needs.
+ AC_REQUIRE([AM_SANITY_CHECK])dnl
+ AC_REQUIRE([AC_ARG_PROGRAM])dnl
+-AM_MISSING_PROG([ACLOCAL], [aclocal-${am__api_version}])
+-AM_MISSING_PROG([AUTOCONF], [autoconf])
+-AM_MISSING_PROG([AUTOMAKE], [automake-${am__api_version}])
+-AM_MISSING_PROG([AUTOHEADER], [autoheader])
++AM_MISSING_PROG([ACLOCAL], [true])
++AM_MISSING_PROG([AUTOCONF], [true])
++AM_MISSING_PROG([AUTOMAKE], [true])
++AM_MISSING_PROG([AUTOHEADER], [true])
+ AM_MISSING_PROG([MAKEINFO], [makeinfo])
+ AC_REQUIRE([AM_PROG_INSTALL_SH])dnl
+ AC_REQUIRE([AM_PROG_INSTALL_STRIP])dnl
+diff -uNr glib-2.40.0.orig/configure glib-2.40.0-1dontcallautoconf/configure
+--- glib-2.40.0.orig/configure	2014-03-24 13:54:23.000000000 -0500
++++ glib-2.40.0-1dontcallautoconf/configure	2014-09-06 21:05:18.817507258 -0500
+@@ -3486,16 +3486,16 @@
+ 
+ # Some tools Automake needs.
+ 
+-ACLOCAL=${ACLOCAL-"${am_missing_run}aclocal-${am__api_version}"}
++ACLOCAL=true
+ 
+ 
+-AUTOCONF=${AUTOCONF-"${am_missing_run}autoconf"}
++AUTOCONF=true
+ 
+ 
+-AUTOMAKE=${AUTOMAKE-"${am_missing_run}automake-${am__api_version}"}
++AUTOMAKE=true
+ 
+ 
+-AUTOHEADER=${AUTOHEADER-"${am_missing_run}autoheader"}
++AUTOHEADER=true
+ 
+ 
+ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}

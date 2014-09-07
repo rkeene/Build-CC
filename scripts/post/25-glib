@@ -41,10 +41,21 @@ if [ ! -d "${GLIB_DIR}" ]; then
 
 	xz -dc "${GLIB_TARBALL}" | tar -xf - || rm -f "${GLIB_TARBALL}"
 
-	(
-		cd "${GLIB_DIR}" || exit 1
+	for patch in patches/glib/*.diff; do
+		echo " ** Applying patch to GLib (version ${GLIB_VERS})"
 
-	) || rm -rf "${GLIB_DIR}"
+		cat "${patch}" | (
+			cd "${GLIB_DIR}" || exit 1
+
+			patch -p1
+		) || rm -rf "${GLIB_DIR}"
+	done
+fi
+
+if [ ! -d "${GLIB_DIR}" ]; then
+	echo "Unable to correctly download/patch Glib"
+
+	exit 1
 fi
 
 cc_save="${CC}"
@@ -68,7 +79,7 @@ for arch in $(multilib); do
 	mkdir "${workdir}"
 	cd "${workdir}" || exit 1
 
-	../${GLIB_DIR}/configure --host="${CCNAME}" --prefix="${PREFIX}" --libdir="${arch_libdir}" --enable-shared --enable-static || exit 1
+	"../${GLIB_DIR}/configure" --host="${CCNAME}" --prefix="${PREFIX}" --libdir="${arch_libdir}" --enable-shared --enable-static || exit 1
 
 	${MAKE}
 

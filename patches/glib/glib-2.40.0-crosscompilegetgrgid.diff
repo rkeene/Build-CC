@@ -1,0 +1,27 @@
+diff -uNr glib-2.40.0.orig/configure glib-2.40.0-1crosscompilegetgrgid/configure
+--- glib-2.40.0.orig/configure	2014-03-24 13:54:23.000000000 -0500
++++ glib-2.40.0-1crosscompilegetgrgid/configure	2014-09-06 20:59:40.507507258 -0500
+@@ -26541,10 +26541,7 @@
+   $as_echo_n "(cached) " >&6
+ else
+   if test "$cross_compiling" = yes; then :
+-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+-as_fn_error $? "cannot run test program while cross compiling
+-See \`config.log' for more details" "$LINENO" 5; }
++  ac_cv_func_posix_getgrgid_r=no
+ else
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+diff -uNr glib-2.40.0.orig/configure.ac glib-2.40.0-1crosscompilegetgrgid/configure.ac
+--- glib-2.40.0.orig/configure.ac	2014-03-24 13:53:31.000000000 -0500
++++ glib-2.40.0-1crosscompilegetgrgid/configure.ac	2014-09-06 20:58:53.807507258 -0500
+@@ -2189,7 +2189,7 @@
+ 	   || error == ENOSYS; 
+ }                              ],
+ 		       [ac_cv_func_posix_getgrgid_r=yes],
+-		       [ac_cv_func_posix_getgrgid_r=no])])
++		       [ac_cv_func_posix_getgrgid_r=no],[ac_cv_func_posix_getgrgid_r=no])])
+ 	GLIB_ASSERT_SET(ac_cv_func_posix_getgrgid_r)
+ 	AS_IF([ test "$ac_cv_func_posix_getgrgid_r" = yes ], [
+ 	   	AC_DEFINE(HAVE_POSIX_GETGRGID_R,1,

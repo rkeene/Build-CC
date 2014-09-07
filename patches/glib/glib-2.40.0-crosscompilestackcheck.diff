@@ -1,0 +1,99 @@
+diff -uNr glib-2.40.0.orig/configure glib-2.40.0-1crosscompilestackcheck/configure
+--- glib-2.40.0.orig/configure	2014-03-24 13:54:23.000000000 -0500
++++ glib-2.40.0-1crosscompilestackcheck/configure	2014-09-06 20:36:58.817507258 -0500
+@@ -21654,10 +21654,7 @@
+ else
+ 
+         if test "$cross_compiling" = yes; then :
+-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+-as_fn_error $? "cannot run test program while cross compiling
+-See \`config.log' for more details" "$LINENO" 5; }
++  glib_cv_stack_grows=maybe
+ else
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+@@ -32327,6 +32324,7 @@
+ 
+ 	case x$g_stack_grows in
+ 	xyes) echo "#define G_HAVE_GROWING_STACK 1" >>$outfile ;;
++	xmaybe) echo "#define G_HAVE_GROWING_STACK -1" >>$outfile ;;
+ 	*)    echo "#define G_HAVE_GROWING_STACK 0" >>$outfile ;;
+ 	esac
+ 
+diff -uNr glib-2.40.0.orig/configure.ac glib-2.40.0-1crosscompilestackcheck/configure.ac
+--- glib-2.40.0.orig/configure.ac	2014-03-24 13:53:31.000000000 -0500
++++ glib-2.40.0-1crosscompilestackcheck/configure.ac	2014-09-06 20:26:01.907507258 -0500
+@@ -602,7 +602,9 @@
+ 	glib_cv_stack_grows=yes
+         ,
+ 	glib_cv_stack_grows=no
+-        ,)
++        ,
++	glib_cv_stack_grows=maybe
++	)
+ ])
+ 
+ dnl AC_C_INLINE is useless to us since it bails out too early, we need to
+@@ -2988,6 +2990,7 @@
+ 
+ 	case x$g_stack_grows in
+ 	xyes) echo "#define G_HAVE_GROWING_STACK 1" >>$outfile ;;
++	xmaybe) echo "#define G_HAVE_GROWING_STACK -1" >>$outfile ;;
+ 	*)    echo "#define G_HAVE_GROWING_STACK 0" >>$outfile ;;
+ 	esac
+ 
+diff -uNr glib-2.40.0.orig/gobject/gsignal.c glib-2.40.0-1crosscompilestackcheck/gobject/gsignal.c
+--- glib-2.40.0.orig/gobject/gsignal.c	2014-02-12 14:08:36.000000000 -0600
++++ glib-2.40.0-1crosscompilestackcheck/gobject/gsignal.c	2014-09-06 20:32:59.367507258 -0500
+@@ -772,6 +772,41 @@
+   return NULL;
+ }
+ 
++#if G_HAVE_GROWING_STACK == -1
++void G_HAVE_GROWING_STACK_FUNC1(int i, int **b) {
++	volatile int x = 5;
++
++	if (i == 0) {
++		*b = &x
++	} else {
++		G_HAVE_GROWING_STACK_FUNC1(i - 1, b);
++	}
++
++	return;
++}
++
++static inline int G_HAVE_GROWING_STACK_FUNC(void) {
++        volatile int *a = 0, *b = 0;
++	volatile int y = 7;
++	static retval = -1;
++
++	if (retval != -1) {
++		return(retval);
++	}
++
++	a = &y;
++
++	G_HAVE_GROWING_STACK_FUNC1(100, &b);
++
++	retval = b > a ? 0 : 1;
++
++	return(retval);
++}
++#else
++#  define G_HAVE_GROWING_STACK_FUNC() G_HAVE_GROWING_STACK
++#endif
++static inline int 
++
+ static inline Emission*
+ emission_find_innermost (gpointer instance)
+ {
+@@ -794,7 +829,7 @@
+   else if (!c)
+     return s;
+   else
+-    return G_HAVE_GROWING_STACK ? MAX (c, s) : MIN (c, s);
++    return G_HAVE_GROWING_STACK_FUNC() ? MAX (c, s) : MIN (c, s);
+ }
+ 
+ static gint
