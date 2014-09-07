@@ -39,8 +39,8 @@ if [ -z "${BINUTILS_VERS}" ]; then
 	BINUTILS_SHA1='7ac75404ddb3c4910c7594b51ddfc76d4693debb'
 fi
 if [ -z "${GCC_VERS}" ]; then
-	GCC_VERS='4.9.0'
-	GCC_SHA1='fbde8eb49f2b9e6961a870887cf7337d31cd4917'
+	GCC_VERS='4.9.1'
+	GCC_SHA1='3f303f403053f0ce79530dae832811ecef91197e'
 fi
 if [ -z "${GMP_VERS}" ]; then
 	GMP_VERS='6.0.0a'
