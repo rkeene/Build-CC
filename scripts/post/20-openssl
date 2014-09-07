@@ -31,11 +31,6 @@ if [ "${STAGE}" != "stage2" ]; then
         exit 0
 fi
 
-# Do not compile if we already have built it
-if [ -e "${PREFIX}/lib/libssl.a" -o -e "${PREFIX}/lib/libssl.so" ]; then
-        exit 0
-fi
-
 # Determine OpenSSL platform
 function openssl_platform() {
 	case "$1" in
@@ -55,9 +50,6 @@ function openssl_platform() {
 	return 0
 }
 openssl_platform "${CCNAME}" >/dev/null || exit 0
-
-# Inform the user of what we are doing
-echo " * Building OpenSSL (version ${OPENSSL_VERS})"
 
 # Download source
 . 'scripts/common'
@@ -119,6 +111,15 @@ for arch in $(multilib); do
 	CC="${CC_SAVE} $(multilib --cflags "${arch}")"
 	arch_host="$(multilib --host "${arch}")"
 	arch_libdir="$(multilib --libdir "${arch}")"
+	openssl_libdir="$(echo "${arch_libdir}" | sed "s|${PREFIX}/*||")"
+
+	# Do not compile if we already have built it
+	if [ -e "${arch_libdir}/libssl.a" -o -e "${arch_libdir}/libssl.so" ]; then
+		continue
+	fi
+
+	# Inform the user of what we are doing
+	echo " * Building OpenSSL (version ${OPENSSL_VERS}) for ${arch_host}"
 
 	openssl_platform="$(openssl_platform "${arch_host}")" || continue
 
@@ -126,7 +127,7 @@ for arch in $(multilib); do
 	cp -rp "${OPENSSL_DIR}" "openssl-${CCNAME}-${arch_host}"
 	cd "openssl-${CCNAME}-${arch_host}" || exit 1
 
-	./Configure --prefix="${PREFIX}" --libdir="${arch_libdir}" no-asm no-krb5 shared "${openssl_platform}"  || exit 1
+	./Configure --prefix="${PREFIX}" --libdir="${openssl_libdir}" no-asm no-krb5 shared "${openssl_platform}"  || exit 1
 
 	${MAKE}
 
@@ -134,7 +135,7 @@ for arch in $(multilib); do
 
 	${MAKE} distclean
 
-	./Configure --prefix="${PREFIX}" --libdir="${arch_libdir}" no-shared no-asm no-dso no-krb5 "${openssl_platform}"  || exit 1
+	./Configure --prefix="${PREFIX}" --libdir="${openssl_libdir}" no-shared no-asm no-dso no-krb5 "${openssl_platform}"  || exit 1
 
 	${MAKE} 
 

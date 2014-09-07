@@ -51,7 +51,6 @@ function fix_pkgconfig_file () {
 # Expects:
 #    CC
 #    CCNAME
-#    FLAGS
 #    PREFIX
 function multilib () {
 	local arch
@@ -92,12 +91,9 @@ function multilib () {
 
 	case "${mode}" in
 		list)
-			archs='_'
-			if echo " ${FLAGS} " | grep ' multilib ' >/dev/null; then
-				archs="$(${CC} -print-multi-lib | grep -v '^[^;]*/' | sed 's/^.*;//;s/^@/-/;s@^ *$@_@')"
-				if [ -z "${archs}" ]; then
-					archs='_'
-				fi
+			archs="$(${CC} -print-multi-lib | grep -v '^[^;]*/' | sed 's/^.*;//;s/^@/-/;s@^ *$@_@')"
+			if [ -z "${archs}" ]; then
+				archs='_'
 			fi
 
 			echo "${archs}"
@@ -110,7 +106,13 @@ function multilib () {
 			return 0
 			;;
 		libdir)
-			libdir="${PREFIX}/lib/$(${CC} ${cflags} -print-multi-os-directory)"
+			libdir="${PREFIX}/lib"
+			mkdir -p "${libdir}" || exit 1
+
+			libdir="${libdir}/$(${CC} ${cflags} -print-multi-os-directory)"
+			mkdir -p "${libdir}" || exit 1
+
+			libdir="$(cd "${libdir}" && pwd)" || exit 1
 
 			echo "${libdir}"
 

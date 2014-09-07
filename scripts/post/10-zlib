@@ -31,14 +31,6 @@ if [ "${STAGE}" != "stage2" ]; then
         exit 0
 fi
 
-# Do not compile if we already have built it
-if [ -e "${PREFIX}/lib/libz.a" -o -e "${PREFIX}/lib/libz.so" ]; then
-        exit 0
-fi
-
-# Inform the user of what we are doing
-echo " * Building Zlib (version ${ZLIB_VERS})"
-
 # Download source
 . 'scripts/common'
 
@@ -53,6 +45,13 @@ for arch in $(multilib); do
 	CC="${CC_SAVE} $(multilib --cflags "${arch}")"
 	arch_host="$(multilib --host "${arch}")"
 	arch_libdir="$(multilib --libdir "${arch}")"
+
+	if [ -e "${arch_libdir}/libz.a" -o -e "${arch_libdir}/libz.so" ]; then
+		continue
+	fi
+
+	# Inform the user of what we are doing
+	echo " * Building Zlib (version ${ZLIB_VERS}) for ${arch_host}"
 
 	rm -rf "zlib-${CCNAME}-${arch_host}"
 	cp -rp "${ZLIB_DIR}" "zlib-${CCNAME}-${arch_host}"
@@ -77,6 +76,8 @@ for arch in $(multilib); do
 	rm -rf "zlib-${CCNAME}-${arch_host}"
 done
 
-fix_pkgconfig_file "${PREFIX}/lib/pkgconfig/zlib.pc"
+find "${PREFIX}" -name 'zlib.pc' | while IFS='' read -r filename; do
+	fix_pkgconfig_file "${filename}"
+done
 
 exit 0

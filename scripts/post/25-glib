@@ -1,0 +1,84 @@
+#! /usr/bin/env bash
+
+# URLs and versions
+GLIB_VERS='2.40.0'
+GLIB_VERS_SHORT="$(echo "${GLIB_VERS}" | cut -f 1-2 -d '.')"
+GLIB_URL="http://ftp.gnome.org/pub/gnome/sources/glib/${GLIB_VERS_SHORT}/glib-${GLIB_VERS}.tar.xz"
+GLIB_TARBALL="src/glib-${GLIB_VERS}.tar.xz"
+GLIB_DIR="glib-${GLIB_VERS}"
+
+# Main script
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+
+# Clean
+if [ "$1" = "distclean" ]; then
+        rm -f "${GLIB_TARBALL}"
+
+        set -- clean
+fi
+
+if [ "$1" = "clean" ]; then
+        rm -rf "${GLIB_DIR}"
+        rm -rf glib-*-*-*
+
+        exit 0
+fi
+
+# Only build in the final stage
+if [ "${STAGE}" != "stage2" ]; then
+        exit 0
+fi
+
+# Load common functions
+. 'scripts/common'
+
+# Download source
+if [ ! -d "${GLIB_DIR}" ]; then
+	download "${GLIB_URL}" "${GLIB_TARBALL}" || exit 1
+
+	xz -dc "${GLIB_TARBALL}" | tar -xf - || rm -f "${GLIB_TARBALL}"
+
+	(
+		cd "${GLIB_DIR}" || exit 1
+
+	) || rm -rf "${GLIB_DIR}"
+fi
+
+cc_save="${CC}"
+cxx_save="${CXX}"
+for arch in $(multilib); do
+	CC="${cc_save} $(multilib --cflags "${arch}")"
+	CXX="${cxx_save} $(multilib --cflags "${arch}")"
+	arch_host="$(multilib --host "${arch}")"
+	arch_libdir="$(multilib --libdir "${arch}")"
+
+	# Do not compile if we already have built it
+	if [ -e "${arch_libdir}/libglib.a" -o -e "${arch_libdir}/libglib.so" ]; then
+		continue
+	fi
+
+	# Inform the user of what we are doing
+	echo " * Building GLib (version ${GLIB_VERS}) for ${arch_host}"
+
+	workdir="glib-${CCNAME}-${arch_host}"
+	rm -rf "${workdir}"
+	mkdir "${workdir}"
+	cd "${workdir}" || exit 1
+
+	../${GLIB_DIR}/configure --host="${CCNAME}" --prefix="${PREFIX}" --libdir="${arch_libdir}" --enable-shared --enable-static || exit 1
+
+	${MAKE}
+
+	${MAKE} install || exit 1
+
+	cd ..
+
+	rm -rf "${workdir}"
+
+	fix_pkgconfig_file "${arch_libdir}/pkgconfig/glib-2.0.pc"
+done
+
+exit 0
