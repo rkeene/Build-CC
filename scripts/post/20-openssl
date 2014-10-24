@@ -1,8 +1,12 @@
 #! /usr/bin/env bash
 
+if [ "${BUILD_CC_INSTALL_OPENSSL}" != '1' ]; then
+	exit 0
+fi
+
 # URLs and versions
-OPENSSL_VERS='1.0.1h'
-OPENSSL_URL="http://www.openssl.org/source/openssl-1.0.1h.tar.gz"
+OPENSSL_VERS='1.0.1j'
+OPENSSL_URL="http://www.openssl.org/source/openssl-${OPENSSL_VERS}.tar.gz"
 OPENSSL_TARBALL="src/openssl-${OPENSSL_VERS}.tar.gz"
 OPENSSL_DIR="openssl-${OPENSSL_VERS}"
 
