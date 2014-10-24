@@ -80,13 +80,15 @@ if [ "${musllibc}" = '0' ]; then
 	PREFIX="${PREFIX}/musl"
 fi
 
+# Load common script
+. 'scripts/common'
+
 # Determine if we are a multilib build
 archs="$(multilib)"
 
-# Download source
-. 'scripts/common'
 
 if [ ! -d "${MUSL_DIR}" ]; then
+	# Download source
 	download "${MUSL_URL}" "${MUSL_TARBALL}" || exit $fail
 
 	gzip -dc "${MUSL_TARBALL}" | tar -xf -
