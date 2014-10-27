@@ -9,7 +9,7 @@ GLIBC_TARBALL="src/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_DIR="glibc-${GLIBC_VERS}"
 
 if [ -z "${GLIBC_PORTS_VERS}" ]; then
-	GLIBC_PORTS_VERS='2.16'
+	GLIBC_PORTS_VERS='2.16.0'
 fi
 GLIBC_PORTS_URL="http://ftp.gnu.org/gnu/glibc/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
 GLIBC_PORTS_TARBALL="src/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
