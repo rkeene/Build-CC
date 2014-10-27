@@ -60,6 +60,7 @@ fi
 touch "${PREFIX}/include/stdio.h"
 
 CC_SAVE="${CC}"
+rebuild_binutils_needed='0'
 for arch in $(multilib); do
 	CC="${CC_SAVE} $(multilib --cflags "${arch}")"
 	arch_host="$(multilib --host "${arch}")"
@@ -95,6 +96,8 @@ for arch in $(multilib); do
 
 			"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" \
 				libc_cv_forced_unwind=yes libc_cv_ctors_header=yes libc_cv_c_cleanup=yes || exit 1
+
+			rebuild_binutils_needed='1'
 			;;
 		stage2)
 			"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" || exit 1
@@ -112,7 +115,7 @@ for arch in $(multilib); do
 	touch "${arch_libdir}/glibc-${GLIBC_VERS}-completed-${STAGE}"
 done
 
-if [ "${STAGE}" = 'stage1' ]; then
+if [ "${rebuild_binutils_needed}" = '1' ]; then
 	# Force rebuilding binutils
 	touch "${CCDIR}/bin/${CCNAME}-rebuild-binutils"
 fi
