@@ -357,7 +357,11 @@ done
 ## Compile binutils for this platform if needed
 (
 	if [ -f "${CCDIR}/bin/${CCNAME}-ar" ]; then
-		exit 0
+		if [ -f "${CCDIR}/bin/${CCNAME}-rebuild-binutils" ]; then
+			rm -f "${CCDIR}/bin/${CCNAME}-rebuild-binutils"
+		else
+			exit 0
+		fi
 	fi
 
 	if [ ! -d "${BINUTILS_DIR}" ]; then
@@ -382,7 +386,7 @@ done
 	mkdir "binutils-${CCNAME}"
 	cd "binutils-${CCNAME}" || exit -1
 
-	"../${BINUTILS_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}"
+	"../${BINUTILS_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-"
 
 	${MAKE} || exit 1
 
@@ -502,13 +506,13 @@ fi
 
 		if [ "${STAGE}" = "stage1" ]; then
 			### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
-			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 			${MAKE} all-gcc all-target-libgcc || exit 1
 			${MAKE} install-gcc install-target-libgcc || exit 1
 		else
 			### Stage 2 -- the full compiler suite
-			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 			${MAKE} || exit 1
 			${MAKE} install || exit 1

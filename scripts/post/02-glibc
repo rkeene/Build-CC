@@ -37,17 +37,9 @@ if [ "$1" = "clean" ]; then
 fi
 
 # Only build glibc for linux-gnu platforms
-if ! echo "${CCNAME}" | grep -- '-linux-gnu' >/dev/null; then
+if ! echo "${CCNAME}" | grep -- '-unknown-linux-gnu' >/dev/null; then
 	exit 0
 fi
-
-# Only build the first time around
-if [ "${STAGE}" != "stage1" ]; then
-	exit 0
-fi
-
-# Inform the user of what we are doing
-echo " * Building GNU C Library (glibc version ${GLIBC_VERS})"
 
 # Download source
 . 'scripts/common'
@@ -64,31 +56,65 @@ if [ ! -d "${GLIBC_PORTS_DIR}" ]; then
 	gzip -dc "${GLIBC_PORTS_TARBALL}" | tar -xf -
 fi
 
-rm -rf "glibc-${CCNAME}"
-mkdir "glibc-${CCNAME}"
-cd "glibc-${CCNAME}" || exit 1
+# Ensure that a stdio.h exists, even if it is blank for autoconf scripts
+touch "${PREFIX}/include/stdio.h"
 
-"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --host="${CCNAME}" --disable-profile --without-gd --without-cvs --without-selinux --enable-add-ons="${GLIBC_PORTS_DIR},nptl" --with-tls || exit 1
-echo '#define HAVE_TLS_SUPPORT 1' >> config.h
+CC_SAVE="${CC}"
+for arch in $(multilib); do
+	CC="${CC_SAVE} $(multilib --cflags "${arch}")"
+	arch_host="$(multilib --host "${arch}")"
+	arch_libdir="$(multilib --libdir "${arch}")"
 
-${MAKE} 
+	if [ -e "${arch_libdir}/glibc-${GLIBC_VERS}-completed-${STAGE}" ]; then
+		continue
+	fi
 
-${MAKE} install
+	# Inform the user of what we are doing
+	echo " * Building GNU C Library (glibc version ${GLIBC_VERS}) for ${arch_host}"
 
-cd .. || exit 1
+	rm -rf "glibc-${CCNAME}-${arch_host}"
+	mkdir "glibc-${CCNAME}-${arch_host}"
+	cd "glibc-${CCNAME}-${arch_host}" || exit 1
 
-rm -rf "glibc-${CCNAME}"
-mkdir "glibc-${CCNAME}"
-cd "glibc-${CCNAME}" || exit 1
+	case "${STAGE}"
+		stage1)
+			"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --libdir="${arch_libdir}" --host="${arch_host}" \
+				--disable-profile --without-gd --without-cvs --without-selinux --enable-add-ons="${GLIBC_PORTS_DIR},nptl" --with-tls \
+				libc_cv_forced_unwind=yes libc_cv_ctors_header=yes libc_cv_c_cleanup=yes || exit 1
+			echo '#define HAVE_TLS_SUPPORT 1' >> config.h
 
-"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --host="${CCNAME}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" || exit 1
+			${MAKE}
 
-${MAKE} 
+			${MAKE} install
 
-${MAKE} install
+			cd ..
 
-cd .. || exit 1
+			rm -rf "glibc-${CCNAME}-${arch_host}"
+			mkdir "glibc-${CCNAME}-${arch_host}"
+			cd "glibc-${CCNAME}-${arch_host}" || exit 1
 
-rm -rf "glibc-${CCNAME}"
+			"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" \
+				libc_cv_forced_unwind=yes libc_cv_ctors_header=yes libc_cv_c_cleanup=yes || exit 1
+			;;
+		stage2)
+			"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" || exit 1
+			;;
+	esac
+
+	${MAKE}
+
+	${MAKE} install
+
+	cd ..
+
+	rm -rf "glibc-${CCNAME}-${arch_host}"
+
+	touch "${arch_libdir}/glibc-${GLIBC_VERS}-completed-${STAGE}"
+done
+
+if [ "${STAGE}" = 'stage1' ]; then
+	# Force rebuilding binutils
+	touch "${CCDIR}/bin/${CCNAME}-rebuild-binutils"
+fi
 
 exit 0
