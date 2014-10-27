@@ -357,9 +357,7 @@ done
 ## Compile binutils for this platform if needed
 (
 	if [ -f "${CCDIR}/bin/${CCNAME}-ar" ]; then
-		if [ -f "${CCDIR}/bin/${CCNAME}-rebuild-binutils" ]; then
-			rm -f "${CCDIR}/bin/${CCNAME}-rebuild-binutils"
-		else
+		if [ ! -f "${CCDIR}/bin/${CCNAME}-rebuild-binutils" ]; then
 			exit 0
 		fi
 	fi
@@ -386,11 +384,13 @@ done
 	mkdir "binutils-${CCNAME}"
 	cd "binutils-${CCNAME}" || exit -1
 
-	"../${BINUTILS_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-"
+	"../${BINUTILS_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --program-prefix="${CCNAME}-"
 
 	${MAKE} || exit 1
 
 	${MAKE} install || exit 1
+
+	rm -f "${CCDIR}/bin/${CCNAME}-rebuild-binutils"
 ) || exit 1
 rm -rf "binutils-${CCNAME}"
 
