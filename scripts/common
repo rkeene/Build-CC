@@ -56,6 +56,7 @@ function multilib () {
 	local arch
 	local mode
 	local archs host libdir cflags
+	local addprefix
 
 	mode='cflags'
 
@@ -73,6 +74,13 @@ function multilib () {
 
 	if [ "$1" = '--cflags' ]; then
 		mode='cflags'
+
+		shift
+	fi
+
+	addprefix='1'
+	if [ "$1" = '--noprefix' ]; then
+		addprefix='0'
 
 		shift
 	fi
@@ -113,6 +121,10 @@ function multilib () {
 			mkdir -p "${libdir}" || exit 1
 
 			libdir="$(cd "${libdir}" && pwd)" || exit 1
+
+			if [ "${addprefix}" = '0' ]; then
+				libdir="$(echo "${libdir}" | sed 's@^'"${PREFIX}"'/@/@')"
+			fi
 
 			echo "${libdir}"
 
