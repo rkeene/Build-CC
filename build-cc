@@ -362,6 +362,8 @@ done
 		fi
 	fi
 
+	echo " * Building GNU Binutils version ${BINUTILS_VERS} for ${CCNAME}"
+
 	if [ ! -d "${BINUTILS_DIR}" ]; then
 		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}" "${BINUTILS_SHA1}"
 
@@ -425,6 +427,8 @@ fi
 			fi
 		fi
 	fi
+
+	echo " * Building GNU C Compiler version ${GCC_VERS} for ${CCNAME}, ${STAGE}"
 
 	if [ ! -d "${GCC_DIR}" ]; then
 		# Download sources required
