@@ -2,14 +2,14 @@
 
 # URLs and versions
 if [ -z "${GLIBC_VERS}" ]; then
-	GLIBC_VERS='2.14'
+	GLIBC_VERS='2.20'
 fi
 GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_TARBALL="src/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_DIR="glibc-${GLIBC_VERS}"
 
 if [ -z "${GLIBC_PORTS_VERS}" ]; then
-	GLIBC_PORTS_VERS='2.13'
+	GLIBC_PORTS_VERS='2.16'
 fi
 GLIBC_PORTS_URL="http://ftp.gnu.org/gnu/glibc/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
 GLIBC_PORTS_TARBALL="src/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
@@ -76,7 +76,7 @@ for arch in $(multilib); do
 	mkdir "glibc-${CCNAME}-${arch_host}"
 	cd "glibc-${CCNAME}-${arch_host}" || exit 1
 
-	case "${STAGE}"
+	case "${STAGE}" in
 		stage1)
 			"../${GLIBC_DIR}/configure" --prefix="${PREFIX}" --libdir="${arch_libdir}" --host="${arch_host}" \
 				--disable-profile --without-gd --without-cvs --without-selinux --enable-add-ons="${GLIBC_PORTS_DIR},nptl" --with-tls \
