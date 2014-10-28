@@ -66,7 +66,7 @@ for arch in $(multilib); do
 	arch_host="$(multilib --host "${arch}")"
 	arch_libdir="$(multilib --libdir --noprefix "${arch}")"
 
-	if [ -e "${arch_libdir}/glibc-${GLIBC_VERS}-completed-${STAGE}" ]; then
+	if [ -e "${PREFIX}/${arch_libdir}/glibc-${GLIBC_VERS}-completed-${STAGE}" ]; then
 		continue
 	fi
 
@@ -112,7 +112,7 @@ for arch in $(multilib); do
 
 	rm -rf "glibc-${CCNAME}-${arch_host}"
 
-	touch "${arch_libdir}/glibc-${GLIBC_VERS}-completed-${STAGE}"
+	touch "${PREFIX}/${arch_libdir}/glibc-${GLIBC_VERS}-completed-${STAGE}"
 done
 
 if [ "${rebuild_binutils_needed}" = '1' ]; then
