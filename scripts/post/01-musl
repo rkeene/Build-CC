@@ -139,7 +139,7 @@ for arch in ${archs}; do
 
 	${MAKE} 
 
-	${MAKE} install || exit $fail
+	${MAKE} syslibdir="${PREFIX}/lib" install || exit $fail
 
 	cd .. || exit $fail
 
