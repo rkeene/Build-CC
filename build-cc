@@ -74,6 +74,7 @@ untested_platforms=(
 	powerpc-unknown-linux-gnu
 	powerpc-unknown-linux-uclibc
 	mips64-ubnt-linux-gnu
+	x86_64-unknown-linux-gnu
 )
 
 if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
