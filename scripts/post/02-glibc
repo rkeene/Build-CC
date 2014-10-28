@@ -79,14 +79,14 @@ for arch in $(multilib); do
 
 	case "${STAGE}" in
 		stage1)
-			"../${GLIBC_DIR}/configure" --prefix='/usr' --libdir="${arch_libdir}" --host="${arch_host}" \
+			"../${GLIBC_DIR}/configure" --prefix='/' --libdir="${arch_libdir}" --host="${arch_host}" \
 				--disable-profile --without-gd --without-cvs --without-selinux --enable-add-ons="${GLIBC_PORTS_DIR},nptl" --with-tls \
 				libc_cv_forced_unwind=yes libc_cv_ctors_header=yes libc_cv_c_cleanup=yes || exit 1
 			echo '#define HAVE_TLS_SUPPORT 1' >> config.h
 
 			${MAKE}
 
-			${MAKE} DESTDIR="${PREFIX}" install
+			${MAKE} install_root="${PREFIX}" install || exit 1
 
 			cd ..
 
@@ -94,19 +94,19 @@ for arch in $(multilib); do
 			mkdir "glibc-${CCNAME}-${arch_host}"
 			cd "glibc-${CCNAME}-${arch_host}" || exit 1
 
-			"../${GLIBC_DIR}/configure" --prefix='/usr' --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" \
+			"../${GLIBC_DIR}/configure" --prefix='/' --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" \
 				libc_cv_forced_unwind=yes libc_cv_ctors_header=yes libc_cv_c_cleanup=yes || exit 1
 
 			rebuild_binutils_needed='1'
 			;;
 		stage2)
-			"../${GLIBC_DIR}/configure" --prefix='/usr' --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" || exit 1
+			"../${GLIBC_DIR}/configure" --prefix='/' --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn,nptl" || exit 1
 			;;
 	esac
 
 	${MAKE}
 
-	${MAKE} DESTDIR="${PREFIX}" install
+	${MAKE} install_root="${PREFIX}" install || exit 1
 
 	cd ..
 
