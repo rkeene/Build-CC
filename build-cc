@@ -510,8 +510,12 @@ fi
 
 		if [ "${STAGE}" = "stage1" ]; then
 			### Stage 1 -- just GCC and libgcc, no more will build until we get some headers
-			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --enable-languages='c' --without-headers --disable-threads --disable-shared --with-newlib --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
-
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" \
+				--enable-languages='c' \
+				--disable-nls --without-headers --disable-threads --disable-shared --with-newlib \
+				--disable-decimal-float --disable-threads --disable-libatomic --disable-libgomp \
+				--disable-libitm --disable-libquadmath --disable-libsanitizer --disable-libssp \
+				--disable-libvtv --disable-libcilkrts ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 			${MAKE} all-gcc all-target-libgcc || exit 1
 			${MAKE} install-gcc install-target-libgcc || exit 1
 		else
