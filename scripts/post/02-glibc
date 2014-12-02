@@ -38,7 +38,9 @@ fi
 
 # Only build glibc for linux-gnu platforms
 if ! echo "${CCNAME}" | grep -- '-unknown-linux-gnu' >/dev/null; then
-	exit 0
+	if ! echo "${CCNAME}" | grep -- '-generic-linux-gnu' >/dev/null; then
+		exit 0
+	fi
 fi
 
 # Determine additional addons
@@ -85,6 +87,8 @@ for arch in $(multilib); do
 	mkdir "glibc-${CCNAME}-${arch_host}"
 	cd "glibc-${CCNAME}-${arch_host}" || exit 1
 
+	echo "slibdir = ${arch_libdir}" > configparms
+
 	case "${STAGE}" in
 		stage1)
 			"../${GLIBC_DIR}/configure" --prefix='/' --libdir="${arch_libdir}" --host="${arch_host}" \
@@ -92,7 +96,7 @@ for arch in $(multilib); do
 				libc_cv_forced_unwind=yes libc_cv_ctors_header=yes libc_cv_c_cleanup=yes || exit 1
 			echo '#define HAVE_TLS_SUPPORT 1' >> config.h
 
-			${MAKE}
+			${MAKE} || exit 1
 
 			${MAKE} install_root="${PREFIX}" install || exit 1
 
@@ -102,16 +106,19 @@ for arch in $(multilib); do
 			mkdir "glibc-${CCNAME}-${arch_host}"
 			cd "glibc-${CCNAME}-${arch_host}" || exit 1
 
+			echo "slibdir = ${arch_libdir}" > configparms
+
 			"../${GLIBC_DIR}/configure" --prefix='/' --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn${GLIBC_ADDITIONAL_ADDONS}" \
 				libc_cv_forced_unwind=yes libc_cv_ctors_header=yes libc_cv_c_cleanup=yes || exit 1
 			rebuild_binutils_needed='1'
 			;;
 		stage2)
-			"../${GLIBC_DIR}/configure" --prefix='/' --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn${GLIBC_ADDITIONAL_ADDONS}" || exit 1
+			"../${GLIBC_DIR}/configure" --prefix='/' --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn${GLIBC_ADDITIONAL_ADDONS}" \
+				--enable-kernel=2.6.35.4 || exit 1
 			;;
 	esac
 
-	${MAKE}
+	${MAKE} || exit 1
 
 	${MAKE} install_root="${PREFIX}" install || exit 1
 
