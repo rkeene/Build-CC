@@ -1,0 +1,25 @@
+#! /usr/bin/env bash
+
+CCNAME="$1"
+STAGE="$4"
+sourcefile="$5"
+
+set_var='0'
+
+if [ "${STAGE}" = 'stage1' ]; then
+	case "${CCNAME}" in
+		*-linux-gnu)
+			set_var='1'
+			;;
+	esac
+fi
+
+if [ "${set_var}" = '1' ]; then
+	#### Compile GCC letting it know we are going to run a new glibc
+	echo 'gcc_cv_libc_provides_ssp=yes' > "${sourcefile}"
+	echo 'export gcc_cv_libc_provides_ssp' >> "${sourcefile}"
+else
+	echo 'unset gcc_cv_libc_provides_ssp' > "${sourcefile}"
+fi
+
+exit 0
