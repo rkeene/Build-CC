@@ -64,17 +64,17 @@ use_gnu_as='1'
 ## Parse arguments
 ### Determine list of platforms
 platforms=(
-	armel-unknown-linux-uclibc
-	mipsel-unknown-linux-uclibc
-	mips-unknown-linux-musl
-	x86_64-unknown-linux-musl
+	armel-generic-linux-uclibc
+	mipsel-generic-linux-uclibc
+	mips-generic-linux-musl
+	x86_64-generic-linux-musl
+	x86_64-generic-linux-gnu
 )
 
 untested_platforms=(
-	powerpc-unknown-linux-gnu
-	powerpc-unknown-linux-uclibc
+	powerpc-generic-linux-gnu
+	powerpc-generic-linux-uclibc
 	mips64-ubnt-linux-gnu
-	x86_64-unknown-linux-gnu
 )
 
 if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
@@ -119,7 +119,11 @@ else
 	if [ "${found}" = '0' ]; then
 		echo "Unknown target: $1, aborting." >&2
 
-		exit 1
+		if [ "${BUILD_CC_FORCE_PLATFORM}" != '1' ]; then
+			exit 1
+		else
+			echo "Proceeding anyway due to BUILD_CC_FORCE_PLATFORM" >&2
+		fi
 	fi
 fi
 
@@ -409,7 +413,11 @@ fi
 
 ### If multilib was not requested, disable it
 if [ "${use_multilib}" = "0" ]; then
+	# Disable multilib
 	BUILD_CC_GCC_CONFIGURE_EXTRA="--disable-multilib ${BUILD_CC_GCC_CONFIGURE_EXTRA}"
+elif [ "${use_multilib}" = '2' ]; then
+	# Force use of the "--enable-multilib" option
+	BUILD_CC_GCC_CONFIGURE_EXTRA="--enable-multilib ${BUILD_CC_GCC_CONFIGURE_EXTRA}"
 fi
 
 ## Compile
@@ -516,12 +524,14 @@ fi
 				--disable-nls --without-headers --disable-threads --disable-shared --with-newlib \
 				--disable-decimal-float --disable-threads --disable-libatomic --disable-libgomp \
 				--disable-libitm --disable-libquadmath --disable-libsanitizer --disable-libssp \
-				--disable-libvtv --disable-libcilkrts ${BUILD_CC_GCC_CONFIGURE_EXTRA}
-			${MAKE} all-gcc all-target-libgcc || exit 1
-			${MAKE} install-gcc install-target-libgcc || exit 1
+				--disable-libvtv --disable-libcilkrts --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+			${MAKE_SINGLE} all-gcc || exit 1
+			${MAKE} install-gcc || exit 1
+			${MAKE} all-target-libgcc || exit 1
+			${MAKE} install-target-libgcc || exit 1
 		else
 			### Stage 2 -- the full compiler suite
-			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 			${MAKE} || exit 1
 			${MAKE} install || exit 1
