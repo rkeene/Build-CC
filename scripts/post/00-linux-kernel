@@ -57,9 +57,9 @@ cp -rp "${LINUX_DIR}" "${LINUX_DIR}-${CCNAME}"
 (
 	cd "${LINUX_DIR}-${CCNAME}" || exit 1
 
-	${MAKE_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" defconfig || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" defconfig || exit 1
 
-	${MAKE_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" INSTALL_HDR_PATH="${PREFIX}" headers_install || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" INSTALL_HDR_PATH="${PREFIX}" headers_install || exit 1
 ) || exit 1
 
 rm -rf "${LINUX_DIR}-${CCNAME}"

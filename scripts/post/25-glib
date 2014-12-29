@@ -85,9 +85,9 @@ for arch in $(multilib); do
 
 	"../${GLIB_DIR}/configure" --host="${CCNAME}" --prefix="${PREFIX}" --libdir="${arch_libdir}" --enable-shared --enable-static || exit 1
 
-	${MAKE}
+	${MAKE} ${BUILD_CC_MAKE_FLAGS}
 
-	${MAKE} install || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1
 
 	cd ..
 

@@ -64,9 +64,9 @@ cd "yasm-${CCNAME}" || exit 1
 unset CC LD CXX AR RANLIB STRIP
 ../${YASM_DIR}/configure --prefix="${CCDIR}" --program-prefix="${CCNAME}-" || exit 1
 
-${MAKE} || exit 1
+${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
 
-${MAKE} install || exit 1
+${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1
 
 for bin in yasm vsyasm ytasm; do
 	rm -f "${CCDIR}/bin/${bin}"

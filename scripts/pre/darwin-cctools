@@ -55,9 +55,9 @@ fi
 
 ./configure --target="${CCNAME}" --prefix="${CCDIR}" "--${ld64enable}-ld64"
 
-${MAKE} || exit 1
+${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
 
-${MAKE} install || exit 1
+${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1
 
 mkdir -p "${CCDIR}/${CCNAME}/bin"
 (

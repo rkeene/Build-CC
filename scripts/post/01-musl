@@ -137,9 +137,9 @@ for arch in ${archs}; do
 	export CFLAGS
 	./configure --prefix="${PREFIX}" --bindir="${CCDIR}/bin" --libdir="${libdir}" --host="${arch_host}" --enable-gcc-wrapper ${MUSL_CONFIGURE_EXTRA} || exit $fail
 
-	${MAKE} 
+	${MAKE} ${BUILD_CC_MAKE_FLAGS}
 
-	${MAKE} syslibdir="${PREFIX}/lib" install || exit $fail
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} syslibdir="${PREFIX}/lib" install || exit $fail
 
 	cd .. || exit $fail
 

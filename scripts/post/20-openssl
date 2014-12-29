@@ -133,17 +133,17 @@ for arch in $(multilib); do
 
 	./Configure --prefix="${PREFIX}" --libdir="${openssl_libdir}" no-asm no-krb5 shared "${openssl_platform}"  || exit 1
 
-	${MAKE}
+	${MAKE} ${BUILD_CC_MAKE_FLAGS}
 
-	${MAKE} install || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1
 
-	${MAKE} distclean
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} distclean
 
 	./Configure --prefix="${PREFIX}" --libdir="${openssl_libdir}" no-shared no-asm no-dso no-krb5 "${openssl_platform}"  || exit 1
 
-	${MAKE} 
+	${MAKE} ${BUILD_CC_MAKE_FLAGS}
 
-	${MAKE} install || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1
 
 	cd ..
 
