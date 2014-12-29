@@ -195,8 +195,8 @@ fi
 
 ## Tools
 MAKE="${MAKE:-make}"
-MAKE_SINGLE="$(echo " ${MAKE} " | sed 's@ -j *[0-9][0-9]* @ @g;s@^  *@@g;s@  *$@@g')"
-export MAKE MAKE_SINGLE
+BUILD_CC_MAKE_FLAGS_SINGLE="$(echo " ${BUILD_CC_MAKE_FLAGS} " | sed 's@ -j *[0-9][0-9]* @ @g;s@^  *@@g;s@  *$@@g')"
+export MAKE BUILD_CC_MAKE_FLAGS_SINGLE BUILD_CC_MAKE_FLAGS
 
 ## Functions
 . 'scripts/common'
@@ -391,11 +391,11 @@ done
 	mkdir "binutils-${CCNAME}"
 	cd "binutils-${CCNAME}" || exit -1
 
-	"../${BINUTILS_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-"
+	"../${BINUTILS_DIR}/configure" --enable-gold=yes --enable-ld=default --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-"
 
-	${MAKE} || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
 
-	${MAKE} install || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1
 
 	rm -f "${CCDIR}/bin/${CCNAME}-rebuild-binutils"
 ) || exit 1
@@ -525,16 +525,16 @@ fi
 				--disable-decimal-float --disable-threads --disable-libatomic --disable-libgomp \
 				--disable-libitm --disable-libquadmath --disable-libsanitizer --disable-libssp \
 				--disable-libvtv --disable-libcilkrts --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
-			${MAKE_SINGLE} all-gcc || exit 1
-			${MAKE} install-gcc || exit 1
-			${MAKE} all-target-libgcc || exit 1
-			${MAKE} install-target-libgcc || exit 1
+			${MAKE} ${BUILD_CC_MAKE_FLAGS_SINGLE} all-gcc || exit 1
+			${MAKE} ${BUILD_CC_MAKE_FLAGS} install-gcc || exit 1
+			${MAKE} ${BUILD_CC_MAKE_FLAGS} all-target-libgcc || exit 1
+			${MAKE} ${BUILD_CC_MAKE_FLAGS} install-target-libgcc || exit 1
 		else
 			### Stage 2 -- the full compiler suite
 			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
-			${MAKE} || exit 1
-			${MAKE} install || exit 1
+			${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
+			${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1
 		fi
 	) || exit 1
 )
