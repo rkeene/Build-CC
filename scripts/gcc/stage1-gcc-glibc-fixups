@@ -21,6 +21,11 @@ if [ "${set_var}" = '1' ]; then
 else
 	echo 'unset gcc_cv_libc_provides_ssp' > "${sourcefile}"
 fi
-echo 'BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-glibc-version=2.20"' >> "${sourcefile}"
+
+if [ -z "${GLIBC_VERS}" ]; then
+	GLIBC_VERS="$(awk '/GLIBC_VERS=/{ print }' scripts/post/02-glibc | sed 's@^.*=@@;s@^'\''@@;s@'\''$@@')"
+fi
+
+echo 'BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-glibc-version='"${GLIBC_VERS}"'"' >> "${sourcefile}"
 
 exit 0
