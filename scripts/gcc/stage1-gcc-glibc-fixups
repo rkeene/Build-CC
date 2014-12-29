@@ -21,5 +21,6 @@ if [ "${set_var}" = '1' ]; then
 else
 	echo 'unset gcc_cv_libc_provides_ssp' > "${sourcefile}"
 fi
+echo 'BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --with-glibc-version=2.20"' >> "${sourcefile}"
 
 exit 0
