@@ -525,7 +525,7 @@ fi
 				--disable-decimal-float --disable-threads --disable-libatomic --disable-libgomp \
 				--disable-libitm --disable-libquadmath --disable-libsanitizer --disable-libssp \
 				--disable-libvtv --disable-libcilkrts --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
-			${MAKE} ${BUILD_CC_MAKE_FLAGS_SINGLE} all-gcc || exit 1
+			${MAKE} ${BUILD_CC_MAKE_FLAGS} all-gcc || exit 1
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} install-gcc || exit 1
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} all-target-libgcc || exit 1
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} install-target-libgcc || exit 1
