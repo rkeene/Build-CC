@@ -57,7 +57,7 @@ fi
 
 # Start of script
 ## Initialize default values
-use_multilib='1'
+use_multilib="${BUILD_CC_MULTILIB_DEFAULT:-1}"
 use_gnu_ld='1'
 use_gnu_as='1'
 
