@@ -43,6 +43,16 @@ if [ ! -d "${LIBRESSL_DIR}" ]; then
         download "${LIBRESSL_URL}" "${LIBRESSL_TARBALL}" "${LIBRESSL_SHA1}" || exit 1
 
         gzip -dc "${LIBRESSL_TARBALL}" | tar -xf -
+
+	for patch in patches/libressl/*.diff; do
+		echo " ** Applying patch to LibreSSL (version ${LIBRESSL_VERS})"
+
+		cat "${patch}" | (
+			cd "${LIBRESSL_DIR}" || exit 1
+
+			patch -p1
+		) || rm -rf "${LIBRESSL_DIR}"
+	done
 fi
 
 CC_SAVE="${CC}"
@@ -50,7 +60,6 @@ for arch in $(multilib); do
 	CC="${CC_SAVE} $(multilib --cflags "${arch}")"
 	arch_host="$(multilib --host "${arch}")"
 	arch_libdir="$(multilib --libdir "${arch}")"
-	libressl_libdir="$(echo "${arch_libdir}" | sed "s|${PREFIX}/*||")"
 
 	# Do not compile if we already have built it
 	if [ -e "${arch_libdir}/libssl.a" -o -e "${arch_libdir}/libssl.so" ]; then
@@ -64,7 +73,7 @@ for arch in $(multilib); do
 	cp -rp "${LIBRESSL_DIR}" "libressl-${CCNAME}-${arch_host}"
 	cd "libressl-${CCNAME}-${arch_host}" || exit 1
 
-	./configure --prefix="${PREFIX}" --libdir="${libressl_libdir}"  --disable-asm --enable-libtls || exit 1
+	./configure --host="${CCNAME}" --prefix="${PREFIX}" --libdir="${arch_libdir}"  --disable-asm --enable-libtls || exit 1
 
 	${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
 
