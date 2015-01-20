@@ -3,6 +3,7 @@
 # URLs and versions
 LIBRESSL_VERS='2.1.2'
 LIBRESSL_URL="http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VERS}.tar.gz"
+LIBRESSL_SHA1='47ce84d388a8fc225f563edbb51db1b0320bdfe3'
 LIBRESSL_TARBALL="src/libressl-${LIBRESSL_VERS}.tar.gz"
 LIBRESSL_DIR="libressl-${LIBRESSL_VERS}"
 
@@ -39,7 +40,7 @@ fi
 . 'scripts/common'
 
 if [ ! -d "${LIBRESSL_DIR}" ]; then
-        download "${LIBRESSL_URL}" "${LIBRESSL_TARBALL}" || exit 1
+        download "${LIBRESSL_URL}" "${LIBRESSL_TARBALL}" "${LIBRESSL_SHA1}" || exit 1
 
         gzip -dc "${LIBRESSL_TARBALL}" | tar -xf -
 fi
