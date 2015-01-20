@@ -1,0 +1,77 @@
+#! /usr/bin/env bash
+
+# URLs and versions
+LIBRESSL_VERS='2.1.2'
+LIBRESSL_URL="http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VERS}.tar.gz"
+LIBRESSL_TARBALL="src/libressl-${LIBRESSL_VERS}.tar.gz"
+LIBRESSL_DIR="libressl-${LIBRESSL_VERS}"
+
+# Main script
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+
+# Clean
+if [ "$1" = "distclean" ]; then
+        rm -f "${LIBRESSL_TARBALL}"
+
+        set -- clean
+fi
+
+if [ "$1" = "clean" ]; then
+        rm -rf "${LIBRESSL_DIR}"
+        rm -rf libressl-*-*-*
+
+        exit 0
+fi
+
+if [ "${BUILD_CC_INSTALL_LIBRESSL}" != '1' -a "${BUILD_CC_INSTALL_OPENSSL}" != '1' ]; then
+	exit 0
+fi
+
+# Only build in the final stage
+if [ "${STAGE}" != "stage2" ]; then
+        exit 0
+fi
+
+# Download source
+. 'scripts/common'
+
+if [ ! -d "${LIBRESSL_DIR}" ]; then
+        download "${LIBRESSL_URL}" "${LIBRESSL_TARBALL}" || exit 1
+
+        gzip -dc "${LIBRESSL_TARBALL}" | tar -xf -
+fi
+
+CC_SAVE="${CC}"
+for arch in $(multilib); do
+	CC="${CC_SAVE} $(multilib --cflags "${arch}")"
+	arch_host="$(multilib --host "${arch}")"
+	arch_libdir="$(multilib --libdir "${arch}")"
+	libressl_libdir="$(echo "${arch_libdir}" | sed "s|${PREFIX}/*||")"
+
+	# Do not compile if we already have built it
+	if [ -e "${arch_libdir}/libssl.a" -o -e "${arch_libdir}/libssl.so" ]; then
+		continue
+	fi
+
+	# Inform the user of what we are doing
+	echo " * Building LibreSSL (version ${LIBRESSL_VERS}) for ${arch_host}"
+
+	rm -rf "libressl-${CCNAME}-${arch_host}"
+	cp -rp "${LIBRESSL_DIR}" "libressl-${CCNAME}-${arch_host}"
+	cd "libressl-${CCNAME}-${arch_host}" || exit 1
+
+	./configure --prefix="${PREFIX}" --libdir="${libressl_libdir}"  --disable-asm --enable-libtls || exit 1
+
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
+
+	${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1
+
+	cd ..
+
+	rm -rf "libressl-${CCNAME}-${arch_host}"
+done
+
+exit 0
