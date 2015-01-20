@@ -1,9 +1,5 @@
 #! /usr/bin/env bash
 
-if [ "${BUILD_CC_INSTALL_LIBFFI}" != '1' ]; then
-	exit 0
-fi
-
 # URLs and versions
 LIBFFI_VERS='3.1'
 LIBFFI_VERS_SHORT="$(echo "${LIBFFI_VERS}" | cut -f 1-2 -d '.')"
@@ -29,6 +25,10 @@ if [ "$1" = "clean" ]; then
         rm -rf libffi-*-*-*
 
         exit 0
+fi
+
+if [ "${BUILD_CC_INSTALL_LIBFFI}" != '1' ]; then
+	exit 0
 fi
 
 # Only build in the final stage

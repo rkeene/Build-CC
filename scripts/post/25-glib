@@ -1,9 +1,5 @@
 #! /usr/bin/env bash
 
-if [ "${BUILD_CC_INSTALL_GLIB}" != '1' ]; then
-	exit 0
-fi
-
 # URLs and versions
 GLIB_VERS='2.40.0'
 GLIB_VERS_SHORT="$(echo "${GLIB_VERS}" | cut -f 1-2 -d '.')"
@@ -29,6 +25,10 @@ if [ "$1" = "clean" ]; then
         rm -rf glib-*-*-*
 
         exit 0
+fi
+
+if [ "${BUILD_CC_INSTALL_GLIB}" != '1' ]; then
+	exit 0
 fi
 
 # Only build in the final stage
