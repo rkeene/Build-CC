@@ -143,6 +143,9 @@ function multilib () {
 				-m64)
 					host="$(echo "${CCNAME}" | sed 's@^i.86-@x86_64-@;s@-x32-@-@;s@^x32-@x86_64-@;s@^sparc-@sparcv9-@')"
 					;;
+				*)
+					host="${CCNAME}.${arch}"
+					;;
 			esac
 
 			echo "${host}"
