@@ -31,6 +31,11 @@ fi
 CCNAME="$1"
 shift
 
+# Canonicalize symbolic links
+if [ -L "${CCROOT}/${CCNAME}" ]; then
+	CCNAME="$(readlink "${CCROOT}/${CCNAME}" | sed 's@^.*/@@')"
+fi
+
 found='0'
 for platform in "${platforms[@]}"; do
 	if [ "${platform}" = "${CCNAME}" ]; then
