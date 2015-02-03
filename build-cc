@@ -338,6 +338,9 @@ if [ "${STAGE_INIT}" = 'stage1' ]; then
 		*-linux-musl)
 			# MUSL libc platforms do not support GCC sanitizer (which relies on glibc features)
 			BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --disable-libsanitizer --disable-target-libsanitizer"
+
+			# MUSL libc platforms do not support GCC mudflap (which relies on glibc features)
+			BUILD_CC_GCC_CONFIGURE_EXTRA="${BUILD_CC_GCC_CONFIGURE_EXTRA} --disable-mudflap --disable-libmudflap"
 			;;
 	esac
 fi
