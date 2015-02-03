@@ -1,9 +1,9 @@
 #! /usr/bin/env bash
 
 # URLs and versions
-LIBRESSL_VERS='2.1.2'
+LIBRESSL_VERS='2.1.3'
 LIBRESSL_URL="http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRESSL_VERS}.tar.gz"
-LIBRESSL_SHA1='47ce84d388a8fc225f563edbb51db1b0320bdfe3'
+LIBRESSL_SHA1='98178f4a4a30fad471e587b9b2c7d33124f70926'
 LIBRESSL_TARBALL="src/libressl-${LIBRESSL_VERS}.tar.gz"
 LIBRESSL_DIR="libressl-${LIBRESSL_VERS}"
 
