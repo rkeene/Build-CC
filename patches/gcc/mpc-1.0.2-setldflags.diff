@@ -1,0 +1,12 @@
+diff -uNr gcc-4.8.4.orig/mpc/src/Makefile.in gcc-4.8.4-1fixmpcldflags/mpc/src/Makefile.in
+--- gcc-4.8.4.orig/mpc/src/Makefile.in	2014-01-15 07:08:59.000000000 -0500
++++ gcc-4.8.4-1fixmpcldflags/mpc/src/Makefile.in	2015-02-10 23:30:55.524395513 -0500
+@@ -182,7 +182,7 @@
+ MAKEINFO = @MAKEINFO@
+ MANIFEST_TOOL = @MANIFEST_TOOL@
+ MKDIR_P = @MKDIR_P@
+-MPC_LDFLAGS = @MPC_LDFLAGS@
++MPC_LDFLAGS = @MPC_LDFLAGS@ @LDFLAGS@
+ MPC_LOG_H = @MPC_LOG_H@
+ NM = @NM@
+ NMEDIT = @NMEDIT@
