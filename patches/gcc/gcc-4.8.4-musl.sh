@@ -1,9 +1,22 @@
 #! /usr/bin/env sh
 
-case "$1" in
-	4.8.[456789])
-		exit 0
+GCC_VERS="$1"
+CCNAME="$2"
+
+case "${CCNAME}" in
+	*-musl)
+		;;
+	*)
+		exit 1
 		;;
 esac
 
-exit 1
+case "${GCC_VERS}" in
+	4.8.[456789])
+		;;
+	*)
+		exit 1
+		;;
+esac
+
+exit 0

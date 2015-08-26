@@ -1,6 +1,17 @@
 #! /usr/bin/env sh
 
-case "$1" in
+GCC_VERS="$1"
+CCNAME="$2"
+
+case "${CCNAME}" in
+	*-musl)
+		;;
+	*)
+		exit 1
+		;;
+esac
+
+case "${GCC_VERS}" in
 	4.9.*)
 		exit 0
 		;;

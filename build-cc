@@ -39,8 +39,8 @@ if [ -z "${BINUTILS_VERS}" ]; then
 	BINUTILS_SHA1='b46cc90ebaba7ffcf6c6d996d60738881b14e50d'
 fi
 if [ -z "${GCC_VERS}" ]; then
-	GCC_VERS='4.8.4'
-	GCC_SHA1='40867a9ac74a054b1cee855988fd680cabf42006'
+	GCC_VERS='4.9.2'
+	GCC_SHA1='79dbcb09f44232822460d80b033c962c0237c6d8'
 fi
 if [ -z "${GMP_VERS}" ]; then
 	GMP_VERS='6.0.0a'
@@ -169,6 +169,7 @@ if [ "$1" = "clean" -o "$1" = "distclean" ]; then
 
 	for platform in "${platforms[@]}"; do
 		rm -rf "gcc-${platform}"
+		rm -rf "gcc-${GCC_VERS}-${platform}"
 		rm -rf "binutils-${platform}"
 	done
 
@@ -204,6 +205,9 @@ export MAKE BUILD_CC_MAKE_FLAGS_SINGLE BUILD_CC_MAKE_FLAGS
 ## Determine path for this cross-compiler
 CCNAME="$1"
 CCDIR="${CCROOT}/${CCNAME}"
+
+## Rename GCC directory since it may be patched based on the platform
+GCC_DIR="${GCC_DIR}-${CCNAME}"
 
 ## Determine attributes for this compiler
 ### Per CPU
@@ -394,7 +398,7 @@ done
 	mkdir "binutils-${CCNAME}"
 	cd "binutils-${CCNAME}" || exit -1
 
-	"../${BINUTILS_DIR}/configure" --enable-gold=yes --enable-ld=default --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-"
+	"../${BINUTILS_DIR}/configure" --enable-gold=no --enable-ld=default --target="${CCNAME}" --prefix="${CCDIR}" --disable-nls --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-"
 
 	${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
 
@@ -443,6 +447,9 @@ fi
 	echo " * Building GNU C Compiler version ${GCC_VERS} for ${CCNAME}, ${STAGE}"
 
 	if [ ! -d "${GCC_DIR}" ]; then
+		# Sanity
+		rm -rf "gcc-${GCC_VERS}"
+
 		# Download sources required
 		download "${GCC_URL}" "${GCC_TARBALL}" "${GCC_SHA1}"
 		download "${GMP_URL}" "${GMP_TARBALL}" "${GMP_SHA1}"
@@ -450,10 +457,15 @@ fi
 		download "${MPC_URL}" "${MPC_TARBALL}" "${MPC_SHA1}"
 
 		# Extract sources
+
 		bzip2 -dc "${GCC_TARBALL}" | "${TAR:-tar}" -xf -
 		bzip2 -dc "${GMP_TARBALL}" | "${TAR:-tar}" -xf -
 		bzip2 -dc "${MPFR_TARBALL}" | "${TAR:-tar}" -xf -
 		gzip -dc "${MPC_TARBALL}" | "${TAR:-tar}" -xf -
+
+		# Rename GCC dir to the name we need
+		rm -rf "${GCC_DIR}"
+		mv "gcc-${GCC_VERS}" "${GCC_DIR}"
 
 		# Arrange sources as needed
 		rm -rf "${GCC_DIR}/gmp"
@@ -473,7 +485,7 @@ fi
 			fi
 
 			if [ -x "${patchfile_checkscript}" ]; then
-				if ! "${patchfile_checkscript}" "${GCC_VERS}"; then
+				if ! "${patchfile_checkscript}" "${GCC_VERS}" "${CCNAME}"; then
 					continue
 				fi
 			fi
@@ -533,8 +545,12 @@ fi
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} all-target-libgcc || exit 1
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} install-target-libgcc || exit 1
 		else
+			if [ -n "${BUILD_CC_EXTRA_LANGUAGES}" ]; then
+				BUILD_CC_EXTRA_LANGUAGES=",${BUILD_CC_EXTRA_LANGUAGES}"
+			fi
+
 			### Stage 2 -- the full compiler suite
-			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages='c,c++' --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages="c,c++${BUILD_CC_EXTRA_LANGUAGES}" --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1

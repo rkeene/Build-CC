@@ -1,0 +1,9 @@
+platform/*-platform.tar.bz2
+src/*
+binutils-*/*
+gcc-*/*
+glibc-*/*
+linux-*/*
+musl-*/*
+yasm-*/*
+zlib-*/*
