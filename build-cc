@@ -35,12 +35,12 @@ fi
 # Tool versions
 ## SHA1 may be left blank to disable hashing
 if [ -z "${BINUTILS_VERS}" ]; then
-	BINUTILS_VERS='2.25'
-	BINUTILS_SHA1='b46cc90ebaba7ffcf6c6d996d60738881b14e50d'
+	BINUTILS_VERS='2.25.1'
+	BINUTILS_SHA1='1d597ae063e3947a5f61e23ceda8aebf78405fcd'
 fi
 if [ -z "${GCC_VERS}" ]; then
-	GCC_VERS='4.9.2'
-	GCC_SHA1='79dbcb09f44232822460d80b033c962c0237c6d8'
+	GCC_VERS='5.2.0'
+	GCC_SHA1='fe3f5390949d47054b613edc36c557eb1d51c18e'
 fi
 if [ -z "${GMP_VERS}" ]; then
 	GMP_VERS='6.0.0a'
