@@ -2,7 +2,7 @@
 
 # URLs and versions
 if [ -z "${GLIBC_VERS}" ]; then
-	GLIBC_VERS='2.20'
+	GLIBC_VERS='2.22'
 fi
 GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_TARBALL="src/glibc-${GLIBC_VERS}.tar.gz"
