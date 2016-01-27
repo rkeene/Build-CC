@@ -258,7 +258,7 @@ fi
 
 ## Determine platform file tarball
 PLATFORM_TARBALL="${BUILD_CC_PLATFORMDIR}/${CCNAME}-platform.tar.bz2"
-ADDONS_TARBALL="${BUILD_CC_PLATFORMDIR}/platform/${CCNAME}-addons.tar.bz2"
+ADDONS_TARBALL="${BUILD_CC_PLATFORMDIR}/${CCNAME}-addons.tar.bz2"
 
 ### Install platform files (needed for libgcc)
 (
