@@ -377,7 +377,7 @@ done
 	echo " * Building GNU Binutils version ${BINUTILS_VERS} for ${CCNAME}"
 
 	if [ ! -d "${BINUTILS_DIR}" ]; then
-		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}" "${BINUTILS_SHA1}"
+		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}" "${BINUTILS_SHA1}" || exit 1
 
 		bzip2 -dc "${BINUTILS_TARBALL}" | tar -xf -
 
@@ -451,10 +451,10 @@ fi
 		rm -rf "gcc-${GCC_VERS}"
 
 		# Download sources required
-		download "${GCC_URL}" "${GCC_TARBALL}" "${GCC_SHA1}"
-		download "${GMP_URL}" "${GMP_TARBALL}" "${GMP_SHA1}"
-		download "${MPFR_URL}" "${MPFR_TARBALL}" "${MPFR_SHA1}"
-		download "${MPC_URL}" "${MPC_TARBALL}" "${MPC_SHA1}"
+		download "${GCC_URL}" "${GCC_TARBALL}" "${GCC_SHA1}" || exit 1
+		download "${GMP_URL}" "${GMP_TARBALL}" "${GMP_SHA1}" || exit 1
+		download "${MPFR_URL}" "${MPFR_TARBALL}" "${MPFR_SHA1}" || exit 1
+		download "${MPC_URL}" "${MPC_TARBALL}" "${MPC_SHA1}" || exit 1
 
 		# Extract sources
 
