@@ -10,6 +10,13 @@ function download () {
 	url="$1"
 	file="$2"
 	checksum="$3"
+
+	if [ -n "${BUILD_CC_DOWNLOAD_HELPER}" ]; then
+		"${BUILD_CC_DOWNLOAD_HELPER}" "${url}" "${file}" "${checksum}"
+
+		return "$?"
+	fi
+
 	tmpfile="${file}.tmp"
 
 	if [ -s "${file}" ]; then
