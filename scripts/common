@@ -64,6 +64,7 @@ function multilib () {
 	local mode
 	local archs host libdir cflags
 	local addprefix
+	local hostCode
 
 	mode='cflags'
 
@@ -100,13 +101,13 @@ function multilib () {
 	else
 		cflags=""
 		if [ "${arch}" != '_' ]; then
-			cflags="${arch}"
+			cflags="$(echo "${arch}" | sed 's@_@ @g')"
 		fi
 	fi
 
 	case "${mode}" in
 		list)
-			archs="$(${CC} -print-multi-lib | grep -v '^[^;]*/' | sed 's/^.*;//;s/^@/-/;s@^ *$@_@')"
+			archs="$(${CC} -print-multi-lib | grep -v '^[^;]*/' | sed 's/^.*;//;s/@/ -/g;s@^ *$@_@;s@^  *@@;s@  *$@@;s@  *@_@g')"
 			if [ -z "${archs}" ]; then
 				archs='_'
 			fi
@@ -134,6 +135,7 @@ function multilib () {
 			fi
 
 			echo "${libdir}"
+			echo "${libdir}" >> /tmp/libdir.log 
 
 			return 0
 			;;
@@ -151,7 +153,8 @@ function multilib () {
 					host="$(echo "${CCNAME}" | sed 's@^i.86-@x86_64-@;s@-x32-@-@;s@^x32-@x86_64-@;s@^sparc-@sparcv9-@')"
 					;;
 				*)
-					host="${CCNAME}.${arch}"
+					hostCode="$(echo "${arch}" | openssl dgst -md5 | sed 's@.*= *@@')"
+					host="$(echo "${CCNAME}" | sed 's@-generic-@-md5'"${hostCode}"'-@g')"
 					;;
 			esac
 
@@ -180,5 +183,8 @@ case "${arch}" in
 		;;
 	i?86)
 		arch=i386
+		;;
+	powerpc*)
+		arch=powerpc
 		;;
 esac

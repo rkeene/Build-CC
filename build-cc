@@ -69,6 +69,7 @@ platforms=(
 	mips-generic-linux-musl
 	x86_64-generic-linux-musl
 	x86_64-generic-linux-gnu
+	powerpc-generic-linux-gnu
 )
 
 untested_platforms=(
