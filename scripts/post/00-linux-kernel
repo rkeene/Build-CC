@@ -5,6 +5,7 @@ LINUX_VERS='2.6.35.4'
 LINUX_VERS_SHORT="$(echo "${LINUX_VERS}" | cut -f 1-2 -d '.')"
 LINUX_URL="http://www.kernel.org/pub/linux/kernel/v${LINUX_VERS_SHORT}/linux-${LINUX_VERS}.tar.bz2"
 LINUX_TARBALL="src/linux-${LINUX_VERS}.tar.bz2"
+LINUX_TARBALL_SHA256="1f2c0ef718398fe04d925d6c513ff82c763a3dbaf53e8cd4cb6ea52a199765d6"
 LINUX_DIR="linux-${LINUX_VERS}"
 
 # Main script
@@ -47,7 +48,7 @@ fi
 echo " * Building Linux kernel headers for ${arch}"
 
 if [ ! -d "${LINUX_DIR}" ]; then
-	download "${LINUX_URL}" "${LINUX_TARBALL}" || exit 1
+	download "${LINUX_URL}" "${LINUX_TARBALL}" "${LINUX_TARBALL_SHA256}" || exit 1
 
 	bzip2 -dc "${LINUX_TARBALL}" | tar -xf -
 fi
