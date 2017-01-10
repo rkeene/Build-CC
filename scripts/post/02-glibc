@@ -3,6 +3,7 @@
 # URLs and versions
 if [ -z "${GLIBC_VERS}" ]; then
 	GLIBC_VERS='2.22'
+	GLIBC_TARBALL_SHA256="a62610c4084a0fd8cec58eee12ef9e61fdf809c31e7cecbbc28feb8719f08be5"
 fi
 GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_TARBALL="src/glibc-${GLIBC_VERS}.tar.gz"
@@ -10,6 +11,7 @@ GLIBC_DIR="glibc-${GLIBC_VERS}"
 
 if [ -z "${GLIBC_PORTS_VERS}" ]; then
 	GLIBC_PORTS_VERS='2.16.0'
+	GLIBC_PORTS_TARBALL_SHA256="1092e81d0c9c1bc29343004c1d01fb0d89eb49dd0fd5339b2f2e64a44b582d10"
 fi
 GLIBC_PORTS_URL="http://ftp.gnu.org/gnu/glibc/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
 GLIBC_PORTS_TARBALL="src/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
@@ -55,13 +57,13 @@ esac
 . 'scripts/common'
 
 if [ ! -d "${GLIBC_DIR}" ]; then
-	download "${GLIBC_URL}" "${GLIBC_TARBALL}" || exit 1
+	download "${GLIBC_URL}" "${GLIBC_TARBALL}" "${GLIBC_TARBALL_SHA256}" || exit 1
 
 	gzip -dc "${GLIBC_TARBALL}" | tar -xf -
 fi
 
 if [ ! -d "${GLIBC_PORTS_DIR}" ]; then
-	download "${GLIBC_PORTS_URL}" "${GLIBC_PORTS_TARBALL}" || exit 1
+	download "${GLIBC_PORTS_URL}" "${GLIBC_PORTS_TARBALL}" "${GLIBC_PORTS_TARBALL_SHA256}" || exit 1
 
 	gzip -dc "${GLIBC_PORTS_TARBALL}" | tar -xf -
 fi

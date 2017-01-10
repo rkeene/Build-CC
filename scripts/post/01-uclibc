@@ -4,6 +4,7 @@
 UCLIBC_VERS='0.9.32.1'
 UCLIBC_URL="http://uclibc.org/downloads/uClibc-${UCLIBC_VERS}.tar.bz2"
 UCLIBC_TARBALL="src/uClibc-${UCLIBC_VERS}.tar.bz2"
+UCLIBC_TARBALL_SHA256=""
 UCLIBC_DIR="uClibc-${UCLIBC_VERS}"
 
 # Main script
@@ -59,7 +60,7 @@ case "${CCNAME}" in
 		;;
 esac
 
-download "${UCLIBC_URL}" "${UCLIBC_TARBALL}" || exit 1
+download "${UCLIBC_URL}" "${UCLIBC_TARBALL}" "${UCLIBC_TARBALL_SHA256}" || exit 1
 
 rm -rf "${UCLIBC_DIR}"
 bzip2 -dc "${UCLIBC_TARBALL}" | tar -xf -

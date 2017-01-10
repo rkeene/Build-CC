@@ -4,6 +4,7 @@
 ZLIB_VERS='1.2.8'
 ZLIB_URL="http://zlib.net/zlib-${ZLIB_VERS}.tar.gz"
 ZLIB_TARBALL="src/zlib-${ZLIB_VERS}.tar.gz"
+ZLIB_TARBALL_SHA256="36658cb768a54c1d4dec43c3116c27ed893e88b02ecfcb44f2166f9c0b7f2a0d"
 ZLIB_DIR="zlib-${ZLIB_VERS}"
 
 # Main script
@@ -35,7 +36,7 @@ fi
 . 'scripts/common'
 
 if [ ! -d "${ZLIB_DIR}" ]; then
-        download "${ZLIB_URL}" "${ZLIB_TARBALL}" || exit 1
+        download "${ZLIB_URL}" "${ZLIB_TARBALL}" "${ZLIB_TARBALL_SHA256}" || exit 1
 
         gzip -dc "${ZLIB_TARBALL}" | tar -xf -
 fi

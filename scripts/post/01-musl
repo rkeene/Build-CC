@@ -4,6 +4,7 @@
 MUSL_VERS='1.1.10'
 MUSL_URL="http://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz"
 MUSL_TARBALL="src/musl-${MUSL_VERS}.tar.gz"
+MUSL_TARBALL_SHA256="45bbe9b1c7f7a0f743477af1e103b6889bfe4dd9815e16f6c89f6c90831c8b7c"
 MUSL_DIR="musl-${MUSL_VERS}"
 
 # Main script
@@ -89,7 +90,7 @@ archs="$(multilib)"
 
 if [ ! -d "${MUSL_DIR}" ]; then
 	# Download source
-	download "${MUSL_URL}" "${MUSL_TARBALL}" || exit $fail
+	download "${MUSL_URL}" "${MUSL_TARBALL}" "${MUSL_TARBALL_SHA256}" || exit $fail
 
 	gzip -dc "${MUSL_TARBALL}" | tar -xf -
 
