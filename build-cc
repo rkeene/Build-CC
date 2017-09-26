@@ -11,7 +11,7 @@ fi
 # Start in the same working directory as our script
 OURSCP="$(which "$0" 2>/dev/null)"
 if [ -f "${OURSCP}" ]; then
-	TOPDIR="$(cd "$(dirname "${OURSCP}")"; pwd)"
+	TOPDIR="$(cd "$(dirname "${OURSCP}")" && pwd)" || exit 1
 fi
 export TOPDIR
 
