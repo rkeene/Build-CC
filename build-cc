@@ -2,7 +2,7 @@
 
 # build-cc @@VERS@@
 
-if [ "$1" == "--version" ]; then
+if [ "$1" = "--version" ]; then
 	echo 'build-cc @@VERS@@'
 
 	exit 0
