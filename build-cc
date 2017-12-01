@@ -67,6 +67,7 @@ platforms=(
 	armel-generic-linux-uclibc
 	mipsel-generic-linux-uclibc
 	mips-generic-linux-musl
+	arm-generic-linux-gnueabihf
 	x86_64-generic-linux-musl
 	x86_64-generic-linux-gnu
 )
@@ -75,6 +76,7 @@ untested_platforms=(
 	powerpc-generic-linux-gnu
 	powerpc-generic-linux-uclibc
 	mips64-ubnt-linux-gnu
+	xtensa-esp32-elf
 )
 
 if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
@@ -82,6 +84,7 @@ if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
 fi
 
 idx="${#platforms[@]}"
+
 for platform in "${BUILD_CC_PLATFORMDIR}"/*-platform.tar.bz2; do
 	if [ ! -f "${platform}" ]; then
 		continue
@@ -296,6 +299,15 @@ if [ -f "${CCDIR}/${CCNAME}/BUILD_CC_GCC_CONFIGURE_EXTRA" ]; then
 	fi
 	
 	rm -f "${CCDIR}/${CCNAME}/BUILD_CC_GCC_CONFIGURE_EXTRA"
+fi
+
+### Generic Build-CC extension
+if [ -f "${CCDIR}/${CCNAME}/BUILD_CC_CONFIG" ]; then
+	for buildCCVar in BUILD_CC_NO_LANG_CXX BUILD_CC_EXTRA_LANGUAGES; do
+		buildCCVarVal="$(grep "^${buildCCVar}=" "${CCDIR}/${CCNAME}/BUILD_CC_CONFIG")" || continue
+		buildCCVarVal="$(echo "${buildCCVarVal}" | cut -f 2 -d =)"
+		eval "$buildCCVar=$(set | grep '^buildCCVarVal=' | sed 's@^buildCCVarVal=@@')"
+	done
 fi
 
 ## Determine stage of build process
@@ -549,8 +561,12 @@ fi
 				BUILD_CC_EXTRA_LANGUAGES=",${BUILD_CC_EXTRA_LANGUAGES}"
 			fi
 
+			if [ -z "${BUILD_CC_NO_LANG_CXX}" ]; then
+				BUILD_CC_EXTRA_LANGUAGES=",c++${BUILD_CC_EXTRA_LANGUAGES}"
+			fi
+
 			### Stage 2 -- the full compiler suite
-			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages="c,c++${BUILD_CC_EXTRA_LANGUAGES}" --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
+			"../${GCC_DIR}/configure" --target="${CCNAME}" --prefix="${CCDIR}" --with-headers="${CCDIR}/${CCNAME}/include" --disable-nls --enable-languages="c,${BUILD_CC_EXTRA_LANGUAGES}" --with-sysroot="${CCDIR}/${CCNAME}" --with-build-sysroot="${CCDIR}/${CCNAME}" --program-prefix="${CCNAME}-" --with-system-zlib ${BUILD_CC_GCC_CONFIGURE_EXTRA}
 
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} || exit 1
 			${MAKE} ${BUILD_CC_MAKE_FLAGS} install || exit 1

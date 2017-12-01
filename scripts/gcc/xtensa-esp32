@@ -1,0 +1,10 @@
+#! /usr/bin/env bash
+
+CCNAME="$1"
+CCDIR="$2"
+STAGE="$4"
+sourcefile="$5"
+
+#XXX:TODO: copy XCHAL from platform .h file into gcc .h files
+
+exit 0

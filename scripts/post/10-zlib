@@ -32,6 +32,13 @@ if [ "${STAGE}" != "stage2" ]; then
         exit 0
 fi
 
+# Skip unusual platforms
+case "${CCNAME}" in
+	xtensa-esp32-elf)
+		exit 0
+	;;
+esac
+
 # Download source
 . 'scripts/common'
 
