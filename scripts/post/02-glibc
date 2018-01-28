@@ -5,7 +5,9 @@ if [ -z "${GLIBC_VERS}" ]; then
 	GLIBC_VERS='2.22'
 	GLIBC_TARBALL_SHA256="a62610c4084a0fd8cec58eee12ef9e61fdf809c31e7cecbbc28feb8719f08be5"
 fi
-GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
+if [ -z "${GLIBC_URL}" ]; then
+	GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
+fi
 GLIBC_TARBALL="src/glibc-${GLIBC_VERS}.tar.gz"
 GLIBC_DIR="glibc-${GLIBC_VERS}"
 

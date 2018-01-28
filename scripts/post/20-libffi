@@ -1,9 +1,13 @@
 #! /usr/bin/env bash
 
 # URLs and versions
-LIBFFI_VERS='3.1'
-LIBFFI_VERS_SHORT="$(echo "${LIBFFI_VERS}" | cut -f 1-2 -d '.')"
-LIBFFI_URL="http://pkgs.fedoraproject.org/repo/pkgs/libffi/libffi-${LIBFFI_VERS}.tar.gz/f5898b29bbfd70502831a212d9249d10/libffi-${LIBFFI_VERS}.tar.gz"
+if [ -z "${LIBFFI_VERS}" ]; then
+	LIBFFI_VERS='3.2.1'
+	LIBFFI_TARBALL_SHA256='d06ebb8e1d9a22d19e38d63fdb83954253f39bedc5d46232a05645685722ca37'
+fi
+if [ -z "${LIBFFI_URL}" ]; then
+	LIBFFI_URL="http://sourceware.org/pub/libffi/libffi-3.2.1.tar.gz"
+fi
 LIBFFI_TARBALL="src/libffi-${LIBFFI_VERS}.tar.gz"
 LIBFFI_DIR="libffi-${LIBFFI_VERS}"
 
@@ -41,7 +45,7 @@ fi
 
 # Download source
 if [ ! -d "${LIBFFI_DIR}" ]; then
-	download "${LIBFFI_URL}" "${LIBFFI_TARBALL}" || exit 1
+	download "${LIBFFI_URL}" "${LIBFFI_TARBALL}" "${LIBFFI_TARBALL_SHA256}" || exit 1
 
 	gzip -dc "${LIBFFI_TARBALL}" | tar -xf - || rm -f "${LIBFFI_TARBALL}"
 fi

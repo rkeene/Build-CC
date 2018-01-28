@@ -1,10 +1,14 @@
 #! /bin/bash
 
 # URLs and versions
-UCLIBC_VERS='0.9.32.1'
-UCLIBC_URL="http://uclibc.org/downloads/uClibc-${UCLIBC_VERS}.tar.bz2"
+if [ -z "${UCLIBC_VERS}" ]; then
+	UCLIBC_VERS='0.9.32.1'
+	UCLIBC_TARBALL_SHA256="b41c91dcc043919a3c19bd73a524adfd375d6d8792ad7be3631f90ecad8465e9"
+fi
+if [ -z "${UCLIBC_URL}" ]; then
+	UCLIBC_URL="http://uclibc.org/downloads/uClibc-${UCLIBC_VERS}.tar.bz2"
+fi
 UCLIBC_TARBALL="src/uClibc-${UCLIBC_VERS}.tar.bz2"
-UCLIBC_TARBALL_SHA256=""
 UCLIBC_DIR="uClibc-${UCLIBC_VERS}"
 
 # Main script

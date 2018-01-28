@@ -1,10 +1,14 @@
 #! /bin/bash
 
 # URLs and versions
-MUSL_VERS='1.1.10'
-MUSL_URL="http://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz"
+if [ -z "${MUSL_VERS}" ]; then
+	MUSL_VERS='1.1.10'
+	MUSL_TARBALL_SHA256="45bbe9b1c7f7a0f743477af1e103b6889bfe4dd9815e16f6c89f6c90831c8b7c"
+fi
+if [ -z "${MUSL_URL}" ]; then
+	MUSL_URL="http://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz"
+fi
 MUSL_TARBALL="src/musl-${MUSL_VERS}.tar.gz"
-MUSL_TARBALL_SHA256="45bbe9b1c7f7a0f743477af1e103b6889bfe4dd9815e16f6c89f6c90831c8b7c"
 MUSL_DIR="musl-${MUSL_VERS}"
 
 # Main script

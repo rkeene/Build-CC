@@ -1,9 +1,13 @@
 #! /usr/bin/env bash
 
 # URLs and versions
-GLIB_VERS='2.40.0'
-GLIB_VERS_SHORT="$(echo "${GLIB_VERS}" | cut -f 1-2 -d '.')"
-GLIB_URL="http://ftp.gnome.org/pub/gnome/sources/glib/${GLIB_VERS_SHORT}/glib-${GLIB_VERS}.tar.xz"
+if [ -z "${GLIB_VERS}" ]; then
+	GLIB_VERS='2.40.0'
+fi
+if [ -z "${GLIB_URL}" ]; then
+	GLIB_VERS_SHORT="$(echo "${GLIB_VERS}" | cut -f 1-2 -d '.')"
+	GLIB_URL="http://ftp.gnome.org/pub/gnome/sources/glib/${GLIB_VERS_SHORT}/glib-${GLIB_VERS}.tar.xz"
+fi
 GLIB_TARBALL="src/glib-${GLIB_VERS}.tar.xz"
 GLIB_DIR="glib-${GLIB_VERS}"
 
