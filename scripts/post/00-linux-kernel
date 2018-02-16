@@ -2,14 +2,36 @@
 
 # URLs and versions
 if [ -z "${LINUX_VERS}" ]; then
-	LINUX_VERS='2.6.35.4'
-	LINUX_TARBALL_SHA256="1f2c0ef718398fe04d925d6c513ff82c763a3dbaf53e8cd4cb6ea52a199765d6"
+	LINUX_VERS='3.2.98'
+	LINUX_TARBALL_SHA256="f31dc3ad9473086b413f8cd3daef1a8003481eb25910a617c74cbc640635eb31"
 fi
-LINUX_VERS_SHORT="$(echo "${LINUX_VERS}" | cut -f 1-2 -d '.')"
 if [ -z "${LINUX_URL}" ]; then
-	LINUX_URL="http://www.kernel.org/pub/linux/kernel/v${LINUX_VERS_SHORT}/linux-${LINUX_VERS}.tar.bz2"
+	LINUX_VERS_SHORT="$(echo "${LINUX_VERS}" | cut -f 1-2 -d '.')"
+	LINUX_VERS_MAJX="$(echo "${LINUX_VERS}" | cut -f 1 -d '.').x"
+	case "${LINUX_VERS}" in
+		[12].*)
+			LINUX_URL="http://www.kernel.org/pub/linux/kernel/v${LINUX_VERS_SHORT}/linux-${LINUX_VERS}.tar.bz2"
+			;;
+		*)
+			LINUX_URL="http://www.kernel.org/pub/linux/kernel/v${LINUX_VERS_MAJX}/linux-${LINUX_VERS}.tar.xz"
+			;;
+	esac
 fi
-LINUX_TARBALL="src/linux-${LINUX_VERS}.tar.bz2"
+case "${LINUX_URL}" in
+	*.gz)
+		LINUX_TARBALL_COMPRESSION='gz'
+		LINUX_TARBALL_COMPRESSION_TOOL='gzip'
+		;;
+	*.bz2)
+		LINUX_TARBALL_COMPRESSION='bz2'
+		LINUX_TARBALL_COMPRESSION_TOOL='bzip2'
+		;;
+	*.xz)
+		LINUX_TARBALL_COMPRESSION='xz'
+		LINUX_TARBALL_COMPRESSION_TOOL='xz'
+		;;
+esac
+LINUX_TARBALL="src/linux-${LINUX_VERS}.tar.${LINUX_TARBALL_COMPRESSION}"
 LINUX_DIR="linux-${LINUX_VERS}"
 
 # Main script
@@ -54,7 +76,7 @@ echo " * Building Linux kernel headers for ${arch}"
 if [ ! -d "${LINUX_DIR}" ]; then
 	download "${LINUX_URL}" "${LINUX_TARBALL}" "${LINUX_TARBALL_SHA256}" || exit 1
 
-	bzip2 -dc "${LINUX_TARBALL}" | tar -xf -
+	"${LINUX_TARBALL_COMPRESSION_TOOL}" -dc "${LINUX_TARBALL}" | tar -xf -
 fi
 
 cp -rp "${LINUX_DIR}" "${LINUX_DIR}-${CCNAME}"

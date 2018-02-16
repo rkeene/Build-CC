@@ -35,24 +35,24 @@ fi
 # Tool versions
 ## SHA1 may be left blank to disable hashing
 if [ -z "${BINUTILS_VERS}" ]; then
-	BINUTILS_VERS='2.25.1'
-	BINUTILS_SHA1='1d597ae063e3947a5f61e23ceda8aebf78405fcd'
+	BINUTILS_VERS='2.29.1'
+	BINUTILS_SHA1='5156099a6c50bd330c3d4c8fc56a9bf725ccaf08'
 fi
 if [ -z "${GCC_VERS}" ]; then
-	GCC_VERS='5.2.0'
-	GCC_SHA1='fe3f5390949d47054b613edc36c557eb1d51c18e'
+	GCC_VERS='7.3.0'
+	GCC_SHA1='9689b9cae7b2886fdaa08449a26701f095c04e48'
 fi
 if [ -z "${GMP_VERS}" ]; then
-	GMP_VERS='6.0.0a'
-	GMP_SHA1='360802e3541a3da08ab4b55268c80f799939fddc'
+	GMP_VERS='6.1.2'
+	GMP_SHA1='366ded6a44cd108ba6b3f5b9a252eab3f3a95cdf'
 fi
 if [ -z "${MPFR_VERS}" ]; then
-	MPFR_VERS='3.1.2'
-	MPFR_SHA1='46d5a11a59a4e31f74f73dd70c5d57a59de2d0b4'
+	MPFR_VERS='4.0.0'
+	MPFR_SHA1='799245347044c8f0da9e513f86bb5e4c07974931'
 fi
 if [ -z "${MPC_VERS}" ]; then
-	MPC_VERS='1.0.2'
-	MPC_SHA1='5072d82ab50ec36cc8c0e320b5c377adb48abe70'
+	MPC_VERS='1.1.0'
+	MPC_SHA1='b019d9e1d27ec5fb99497159d43a3164995de2d0'
 fi
 
 # Start of script
@@ -147,9 +147,9 @@ BINUTILS_DIR="binutils-${BINUTILS_VERS}"
 
 ### GCC
 if [ -z "${GCC_URL}" ]; then
-	GCC_URL="http://mirrors.kernel.org/gnu/gcc/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.bz2"
+	GCC_URL="http://mirrors.kernel.org/gnu/gcc/gcc-${GCC_VERS}/gcc-${GCC_VERS}.tar.xz"
 fi
-GCC_TARBALL="src/gcc-${GCC_VERS}.tar.bz2"
+GCC_TARBALL="src/gcc-${GCC_VERS}.tar.xz"
 GCC_DIR="gcc-${GCC_VERS}"
 
 ### GMP
@@ -468,7 +468,7 @@ fi
 
 		# Extract sources
 
-		bzip2 -dc "${GCC_TARBALL}" | "${TAR:-tar}" -xf -
+		xz -dc "${GCC_TARBALL}" | "${TAR:-tar}" -xf -
 		bzip2 -dc "${GMP_TARBALL}" | "${TAR:-tar}" -xf -
 		bzip2 -dc "${MPFR_TARBALL}" | "${TAR:-tar}" -xf -
 		gzip -dc "${MPC_TARBALL}" | "${TAR:-tar}" -xf -

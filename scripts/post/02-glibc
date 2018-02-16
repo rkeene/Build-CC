@@ -1,9 +1,13 @@
 #! /bin/bash
 
 # URLs and versions
+if [ -z "${LINUX_VERS}" ]; then
+	## Keep in sync with 00-linux-kernel
+	LINUX_VERS='3.2.98'
+fi
 if [ -z "${GLIBC_VERS}" ]; then
-	GLIBC_VERS='2.22'
-	GLIBC_TARBALL_SHA256="a62610c4084a0fd8cec58eee12ef9e61fdf809c31e7cecbbc28feb8719f08be5"
+	GLIBC_VERS='2.26'
+	GLIBC_TARBALL_SHA256="dcc2482b00fdb1c316f385f8180e182bbd37c065dc7d8281a4339d2834ef1be7"
 fi
 if [ -z "${GLIBC_URL}" ]; then
 	GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
@@ -15,7 +19,9 @@ if [ -z "${GLIBC_PORTS_VERS}" ]; then
 	GLIBC_PORTS_VERS='2.16.0'
 	GLIBC_PORTS_TARBALL_SHA256="1092e81d0c9c1bc29343004c1d01fb0d89eb49dd0fd5339b2f2e64a44b582d10"
 fi
-GLIBC_PORTS_URL="http://ftp.gnu.org/gnu/glibc/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
+if [ -z "${GLIBC_PORTS_URL}" ]; then
+	GLIBC_PORTS_URL="http://ftp.gnu.org/gnu/glibc/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
+fi
 GLIBC_PORTS_TARBALL="src/glibc-ports-${GLIBC_PORTS_VERS}.tar.gz"
 GLIBC_PORTS_DIR="$(pwd)/glibc-ports-${GLIBC_PORTS_VERS}"
 
@@ -118,7 +124,7 @@ for arch in $(multilib); do
 			;;
 		stage2)
 			"../${GLIBC_DIR}/configure" --prefix='/' --libdir="${arch_libdir}" --host="${arch_host}" --enable-add-ons="${GLIBC_PORTS_DIR},libidn${GLIBC_ADDITIONAL_ADDONS}" \
-				--enable-kernel=2.6.35.4 || exit 1
+				--enable-kernel="${LINUX_VERS}" || exit 1
 			;;
 	esac
 
