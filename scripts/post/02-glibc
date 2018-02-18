@@ -74,6 +74,22 @@ if [ ! -d "${GLIBC_PORTS_DIR}" ]; then
 	download "${GLIBC_PORTS_URL}" "${GLIBC_PORTS_TARBALL}" "${GLIBC_PORTS_TARBALL_SHA256}" || exit 1
 
 	gzip -dc "${GLIBC_PORTS_TARBALL}" | tar -xf -
+
+	# Apply patches for glibc (only once both packages have been extracted)
+	for patch in patches/glibc/*.diff; do
+		if [ ! -f "${patch}" ]; then
+			continue
+		fi
+
+		echo " ** Applying patches to glibc (version ${GLIBC_VERS})"
+		echo "     ${patch}"
+
+		cat "${patch}" | (
+			cd "${GLIBC_DIR}" || exit 1
+
+			patch -p1
+		) || rm -rf "${GLIBC_DIR}"
+	done
 fi
 
 # Ensure that a stdio.h exists, even if it is blank for autoconf scripts
