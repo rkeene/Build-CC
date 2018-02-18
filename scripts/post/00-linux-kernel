@@ -1,5 +1,16 @@
 #! /bin/bash
 
+# Platform identification
+CCNAME="$1"
+CCDIR="$2"
+PREFIX="$3"
+STAGE="$4"
+
+. 'scripts/common'
+
+# Platform-specific adjustments
+kernelArch="${arch}"
+
 # URLs and versions
 if [ -z "${LINUX_VERS}" ]; then
 	LINUX_VERS='3.2.98'
@@ -34,12 +45,6 @@ esac
 LINUX_TARBALL="src/linux-${LINUX_VERS}.tar.${LINUX_TARBALL_COMPRESSION}"
 LINUX_DIR="linux-${LINUX_VERS}"
 
-# Main script
-CCNAME="$1"
-CCDIR="$2"
-PREFIX="$3"
-STAGE="$4"
-
 # Clean
 if [ "$1" = "distclean" ]; then
 	rm -f "${LINUX_TARBALL}"
@@ -67,12 +72,10 @@ if [ -d "${PREFIX}/include/linux" ]; then
 	exit 0
 fi
 
-# Download source
-. 'scripts/common'
-
 # Inform the user of what we are doing
 echo " * Building Linux kernel headers for ${arch}"
 
+# Download source
 if [ ! -d "${LINUX_DIR}" ]; then
 	download "${LINUX_URL}" "${LINUX_TARBALL}" "${LINUX_TARBALL_SHA256}" || exit 1
 
@@ -84,9 +87,9 @@ cp -rp "${LINUX_DIR}" "${LINUX_DIR}-${CCNAME}"
 (
 	cd "${LINUX_DIR}-${CCNAME}" || exit 1
 
-	${MAKE} ${BUILD_CC_MAKE_FLAGS_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" defconfig || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${kernelArch}" defconfig || exit 1
 
-	${MAKE} ${BUILD_CC_MAKE_FLAGS_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${arch}" INSTALL_HDR_PATH="${PREFIX}" headers_install || exit 1
+	${MAKE} ${BUILD_CC_MAKE_FLAGS_SINGLE} CROSS_COMPILE="${CCNAME}-" ARCH="${kernelArch}" INSTALL_HDR_PATH="${PREFIX}" headers_install || exit 1
 ) || exit 1
 
 rm -rf "${LINUX_DIR}-${CCNAME}"
