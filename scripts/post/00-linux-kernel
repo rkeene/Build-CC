@@ -10,6 +10,11 @@ STAGE="$4"
 
 # Platform-specific adjustments
 kernelArch="${arch}"
+case "${kernelArch}" in
+	aarch64)
+		kernelArch='arm64'
+		;;
+esac
 
 # URLs and versions
 if [ -z "${LINUX_VERS}" ]; then
