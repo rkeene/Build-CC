@@ -74,9 +74,19 @@ platforms=(
 untested_platforms=(
 	powerpc-generic-linux-gnu
 	powerpc-generic-linux-uclibc
-	mips64-ubnt-linux-gnu
 )
 
+for platformfile in platform/*.sh; do
+	platform="$(echo "${platformfile}" | sed 's@^.*/@@;s@\.sh$@@')"
+
+	if grep '^# Tested' "${platformfile}" >/dev/null 2>/dev/null; then
+		platforms=("${platforms[@]}" "${platform}")
+	else
+		untested_platforms=("${untested_platforms[@]}" "${platform}")
+	fi
+done
+
+# Verify platform
 if [ "${BUILD_CC_USE_UNTESTED}" = '1' ]; then
 	platforms=("${platforms[@]}" "${untested_platforms[@]}")
 fi
@@ -127,15 +137,8 @@ else
 	fi
 fi
 
-## Versions
-case "${platform}" in
-	mips64-ubnt-linux-gnu)
-		# Ubiquiti uses an old version of glibc
-		GLIBC_VERS='2.11.3'
-		GLIBC_PORTS_VERS='2.11'
-		export GLIBC_VERS GLIBC_PORTS_VERS
-		;;
-esac
+## Load user-supplied profiles
+. "${TOPDIR}/platform/${platform}.sh"
 
 ## URLs
 ### Binutils
