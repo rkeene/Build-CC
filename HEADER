@@ -4,6 +4,7 @@ Release information:
   pkg:  @@UTIL@@ version @@VERS@@
   web:  http://build-cc.rkeene.org/
   url:  http://www.rkeene.org/devel/@@UTIL@@-@@VERS@@.tar.gz
+  url:  http://build-cc.rkeene.org/uv/@@UTIL@@-@@VERS@@.tar.gz
  date:  @@DATE@@
 --------------------------------------------------------------------------
 
