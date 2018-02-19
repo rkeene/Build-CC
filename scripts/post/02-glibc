@@ -6,8 +6,8 @@ if [ -z "${LINUX_VERS}" ]; then
 	LINUX_VERS='3.2.98'
 fi
 if [ -z "${GLIBC_VERS}" ]; then
-	GLIBC_VERS='2.26'
-	GLIBC_TARBALL_SHA256="dcc2482b00fdb1c316f385f8180e182bbd37c065dc7d8281a4339d2834ef1be7"
+	GLIBC_VERS='2.27'
+	GLIBC_TARBALL_SHA256="881ca905e6b5eec724de7948f14d66a07d97bdee8013e1b2a7d021ff5d540522"
 fi
 if [ -z "${GLIBC_URL}" ]; then
 	GLIBC_URL="http://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERS}.tar.gz"
