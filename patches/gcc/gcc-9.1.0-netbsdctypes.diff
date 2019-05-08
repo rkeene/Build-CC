@@ -1,0 +1,12 @@
+diff -uNr gcc-9.1.0.orig/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h
+--- gcc-9.1.0.orig/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h	2019-01-01 06:31:55.000000000 -0600
++++ gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h	2019-05-08 16:44:07.429830428 -0500
+@@ -45,7 +45,7 @@
+     // on the mask type. Because of this, we don't use an enum.
+     typedef unsigned char      	mask;
+ 
+-#ifndef _CTYPE_U
++#ifndef _CTYPE_N
+     static const mask upper    	= _U;
+     static const mask lower 	= _L;
+     static const mask alpha 	= _U | _L;
