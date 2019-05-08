@@ -1,10 +1,55 @@
 #! /bin/bash
 
 # Functions
+function _download_file() {
+	local file url headers
+	local header
+	local try_download_command
+	local args
+
+	file="$1"
+	url="$2"
+	shift 2
+	headers=("$@")
+
+	if [ -z "${_download_command}" ]; then
+		for try_download_command in curl wget; do
+			if command -v "${try_download_command}" 2>/dev/null >/dev/null; then
+				_download_command="${try_download_command}"
+
+				break
+			fi
+		done
+	fi
+
+	args=()
+	for header in "${headers[@]}"; do
+		case "${_download_command}" in
+			curl)
+				args+=(--header "${header}")
+				;;
+			wget)
+				args+=(--header="${header}")
+				;;
+		esac
+	done
+
+	case "${_download_command}" in
+		curl)
+			curl "${args[@]}" --silent --show-error --location --output "${file}" "${url}" || return 1
+			;;
+		wget)
+			wget "${args[@]}" --output-document="${file}" "${url}" || return 1
+			;;
+	esac
+
+	return 0
+}
+
 function download () {
 	local url
 	local file
-	local checksum dl_checksum
+	local checksum dl_checksum checksum_type
 	local tmpfile
 
 	url="$1"
@@ -17,6 +62,20 @@ function download () {
 		return "$?"
 	fi
 
+	checksum_type='unknown'
+	if [ -n "${checksum}" ]; then
+		case "${checksum}" in
+			????????????????????????????????????????)
+				checksum_type='sha1'
+				;;
+			????????????????????????????????????????????????????????????????)
+				checksum_type='sha256'
+				;;
+			*)
+				;;
+		esac
+	fi
+
 	tmpfile="${file}.tmp"
 
 	if [ -s "${file}" ]; then
@@ -26,23 +85,23 @@ function download () {
 	mkdir -p "$(dirname "${tmpfile}")" 2>/dev/null >/dev/null
 
 	rm -f "${tmpfile}"
-	wget -O "${tmpfile}" "${url}" || return 1
+	if [ "${checksum_type}" != 'unknown' ]; then
+		_download_file "${tmpfile}" "http://hashcache.rkeene.org/${checksum_type}/${checksum}" "X-Cache-URL: ${url}" || rm -f "${tmpfile}"
+	fi
+	if [ ! -s "${tmpfile}" ]; then
+		_download_file "${tmpfile}" "${url}"
+	fi
 
-	if [ -n "${checksum}" ]; then
-		case "${checksum}" in
-			????????????????????????????????????????)
-				dl_checksum="$(openssl dgst -sha1 "${tmpfile}" 2>/dev/null | sed 's@.*= *@@')"
-				;;
-			????????????????????????????????????????????????????????????????)
-				dl_checksum="$(openssl dgst -sha256 "${tmpfile}" 2>/dev/null | sed 's@.*= *@@')"
-				;;
-			*)
-				echo "Invalid checksum value: ${checksum}" >&2
+	case "${checksum_type}" in
+		sha1)
+			dl_checksum="$(openssl dgst -sha1 "${tmpfile}" 2>/dev/null | sed 's@.*= *@@')"
+			;;
+		sha256)
+			dl_checksum="$(openssl dgst -sha256 "${tmpfile}" 2>/dev/null | sed 's@.*= *@@')"
+			;;
+	esac
 
-				exit 1
-				;;
-		esac
-
+	if [ "${checksum_type}" != 'unknown' ]; then
 		if [ "${checksum}" != "${dl_checksum}" ]; then
 			echo "Checksum mismatch.  Got checksum: ${dl_checksum}; Expected checksum: ${checksum}" >&2
 

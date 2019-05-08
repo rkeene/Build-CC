@@ -34,25 +34,41 @@ fi
 
 # Tool versions
 ## SHA1 may be left blank to disable hashing
+declare -A tool_hash
+tool_hash["binutils-2.25.1.tar.bz2"]='b5b14added7d78a8d1ca70b5cb75fef57ce2197264f4f5835326b0df22ac9f22'
+tool_hash["binutils-2.25.tar.bz2"]='22defc65cfa3ef2a3395faaea75d6331c6e62ea5dfacfed3e2ec17b08c882923'
+tool_hash["binutils-2.29.1.tar.bz2"]='1509dff41369fb70aed23682351b663b56db894034773e6dbf7d5d6071fc55cc'
+tool_hash["binutils-2.32.tar.bz2"]='de38b15c902eb2725eac6af21183a5f34ea4634cb0bcef19612b50e5ed31072d'
+tool_hash["gcc-4.9.2.tar.bz2"]='2020c98295856aa13fda0f2f3a4794490757fc24bcca918d52cc8b4917b972dd'
+tool_hash["gcc-6.2.0.tar.bz2"]='9944589fc722d3e66308c0ce5257788ebd7872982a718aa2516123940671b7c5'
+tool_hash["gcc-7.3.0.tar.xz"]='832ca6ae04636adbb430e865a1451adf6979ab44ca1c8374f61fba65645ce15c'
+tool_hash["gcc-9.1.0.tar.xz"]='79a66834e96a6050d8fe78db2c3b32fb285b230b855d0a66288235bc04b327a0'
+tool_hash["glibc-2.22.tar.gz"]='a62610c4084a0fd8cec58eee12ef9e61fdf809c31e7cecbbc28feb8719f08be5'
+tool_hash["glibc-2.26.tar.gz"]='dcc2482b00fdb1c316f385f8180e182bbd37c065dc7d8281a4339d2834ef1be7'
+tool_hash["glibc-2.27.tar.gz"]='881ca905e6b5eec724de7948f14d66a07d97bdee8013e1b2a7d021ff5d540522'
+tool_hash["glibc-ports-2.16.0.tar.gz"]='1092e81d0c9c1bc29343004c1d01fb0d89eb49dd0fd5339b2f2e64a44b582d10'
+tool_hash["gmp-6.0.0a.tar.bz2"]='7f8e9a804b9c6d07164cf754207be838ece1219425d64e28cfa3e70d5c759aaf'
+tool_hash["gmp-6.1.2.tar.bz2"]='5275bb04f4863a13516b2f39392ac5e272f5e1bb8057b18aec1c9b79d73d8fb2'
+tool_hash["mpc-1.0.2.tar.gz"]='b561f54d8a479cee3bc891ee52735f18ff86712ba30f036f8b8537bae380c488'
+tool_hash["mpc-1.1.0.tar.gz"]='6985c538143c1208dcb1ac42cedad6ff52e267b47e5f970183a3e75125b43c2e'
+tool_hash["mpfr-3.1.2.tar.bz2"]='79c73f60af010a30a5c27a955a1d2d01ba095b72537dab0ecaad57f5a7bb1b6b'
+tool_hash["mpfr-4.0.0.tar.bz2"]='6aa31fbf3bd1f9f95bcfa241590a9d11cb0f874e2bb93b99c9e2de8eaea6d5fd'
+tool_hash["mpfr-4.0.0.tar.xz"]='fbe2cd1418b321f5c899ce4f0f0f4e73f5ecc7d02145b0e1fd096f5c3afb8a1d'
+tool_hash["mpfr-4.0.2.tar.xz"]='1d3be708604eae0e42d578ba93b390c2a145f17743a744d8f3f8c2ad5855a38a'
 if [ -z "${BINUTILS_VERS}" ]; then
-	BINUTILS_VERS='2.29.1'
-	BINUTILS_SHA1='5156099a6c50bd330c3d4c8fc56a9bf725ccaf08'
+	BINUTILS_VERS='2.32'
 fi
 if [ -z "${GCC_VERS}" ]; then
-	GCC_VERS='7.3.0'
-	GCC_SHA1='9689b9cae7b2886fdaa08449a26701f095c04e48'
+	GCC_VERS='9.1.0'
 fi
 if [ -z "${GMP_VERS}" ]; then
 	GMP_VERS='6.1.2'
-	GMP_SHA1='366ded6a44cd108ba6b3f5b9a252eab3f3a95cdf'
 fi
 if [ -z "${MPFR_VERS}" ]; then
-	MPFR_VERS='4.0.0'
-	MPFR_SHA1='799245347044c8f0da9e513f86bb5e4c07974931'
+	MPFR_VERS='4.0.2'
 fi
 if [ -z "${MPC_VERS}" ]; then
 	MPC_VERS='1.1.0'
-	MPC_SHA1='b019d9e1d27ec5fb99497159d43a3164995de2d0'
 fi
 
 # Start of script
@@ -138,7 +154,10 @@ else
 fi
 
 ## Load user-supplied profiles
-. "${TOPDIR}/platform/${platform}.sh"
+platformProfileScript="${TOPDIR}/platform/${platform}.sh"
+if [ -f "${platformProfileScript}" ]; then
+	. "${platformProfileScript}"
+fi
 
 ## URLs
 ### Binutils
@@ -147,6 +166,7 @@ if [ -z "${BINUTILS_URL}" ]; then
 fi
 BINUTILS_TARBALL="src/binutils-${BINUTILS_VERS}.tar.bz2"
 BINUTILS_DIR="binutils-${BINUTILS_VERS}"
+BINUTILS_HASH="${tool_hash[$(basename "${BINUTILS_TARBALL}")]}"
 
 ### GCC
 if [ -z "${GCC_URL}" ]; then
@@ -154,6 +174,7 @@ if [ -z "${GCC_URL}" ]; then
 fi
 GCC_TARBALL="src/gcc-${GCC_VERS}.tar.xz"
 GCC_DIR="gcc-${GCC_VERS}"
+GCC_HASH="${tool_hash[$(basename "${GCC_TARBALL}")]}"
 
 ### GMP
 if [ -z "${GMP_URL}" ]; then
@@ -161,13 +182,15 @@ if [ -z "${GMP_URL}" ]; then
 fi
 GMP_TARBALL="src/gmp-${GMP_VERS}.tar.bz2"
 GMP_DIR="gmp-$(echo "${GMP_VERS}" | sed 's@[a-zA-Z]*$@@')"
+GMP_HASH="${tool_hash[$(basename "${GMP_TARBALL}")]}"
 
 ### MPFR
 if [ -z "${MPFR_URL}" ]; then
-	MPFR_URL="http://www.mpfr.org/mpfr-${MPFR_VERS}/mpfr-${MPFR_VERS}.tar.bz2"
+	MPFR_URL="http://www.mpfr.org/mpfr-${MPFR_VERS}/mpfr-${MPFR_VERS}.tar.xz"
 fi
-MPFR_TARBALL="src/mpfr-${MPFR_VERS}.tar.bz2"
+MPFR_TARBALL="src/mpfr-${MPFR_VERS}.tar.xz"
 MPFR_DIR="mpfr-${MPFR_VERS}"
+MPFR_HASH="${tool_hash[$(basename "${MPFR_TARBALL}")]}"
 
 ### MPC
 if [ -z "${MPC_URL}" ]; then
@@ -175,6 +198,7 @@ if [ -z "${MPC_URL}" ]; then
 fi
 MPC_TARBALL="src/mpc-${MPC_VERS}.tar.gz"
 MPC_DIR="mpc-${MPC_VERS}"
+MPC_HASH="${tool_hash[$(basename "${MPC_TARBALL}")]}"
 
 ## Clean-up
 if [ "$1" = "clean" -o "$1" = "distclean" ]; then
@@ -283,12 +307,20 @@ ADDONS_TARBALL="${BUILD_CC_PLATFORMDIR}/${CCNAME}-addons.tar.bz2"
 		ln -s . usr
 	fi
 
+	fixPerms='false'
 	if [ -f "${PLATFORM_TARBALL}" ]; then
 		bzip2 -dc "${PLATFORM_TARBALL}" | "${TAR:-tar}" --keep-old-files -xf - >/dev/null 2>/dev/null
+		fixPerms='true'
 	fi
 
 	if [ -f "${ADDONS_TARBALL}" ]; then
 		bzip2 -dc "${ADDONS_TARBALL}" | "${TAR:-tar}" --keep-old-files -xf - >/dev/null 2>/dev/null
+		fixPerms='true'
+	fi
+
+	if [ "${fixPerms}" = 'true' ]; then
+		find . -type d -exec chmod u+rx '{}' ';'
+		find . -type f -exec chmod u+r '{}' ';'
 	fi
 )
 
@@ -390,7 +422,7 @@ done
 	echo " * Building GNU Binutils version ${BINUTILS_VERS} for ${CCNAME}"
 
 	if [ ! -d "${BINUTILS_DIR}" ]; then
-		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}" "${BINUTILS_SHA1}" || exit 1
+		download "${BINUTILS_URL}" "${BINUTILS_TARBALL}" "${BINUTILS_HASH}" || exit 1
 
 		bzip2 -dc "${BINUTILS_TARBALL}" | tar -xf -
 
@@ -464,16 +496,16 @@ fi
 		rm -rf "gcc-${GCC_VERS}"
 
 		# Download sources required
-		download "${GCC_URL}" "${GCC_TARBALL}" "${GCC_SHA1}" || exit 1
-		download "${GMP_URL}" "${GMP_TARBALL}" "${GMP_SHA1}" || exit 1
-		download "${MPFR_URL}" "${MPFR_TARBALL}" "${MPFR_SHA1}" || exit 1
-		download "${MPC_URL}" "${MPC_TARBALL}" "${MPC_SHA1}" || exit 1
+		download "${GCC_URL}" "${GCC_TARBALL}" "${GCC_HASH}" || exit 1
+		download "${GMP_URL}" "${GMP_TARBALL}" "${GMP_HASH}" || exit 1
+		download "${MPFR_URL}" "${MPFR_TARBALL}" "${MPFR_HASH}" || exit 1
+		download "${MPC_URL}" "${MPC_TARBALL}" "${MPC_HASH}" || exit 1
 
 		# Extract sources
 
 		xz -dc "${GCC_TARBALL}" | "${TAR:-tar}" -xf -
 		bzip2 -dc "${GMP_TARBALL}" | "${TAR:-tar}" -xf -
-		bzip2 -dc "${MPFR_TARBALL}" | "${TAR:-tar}" -xf -
+		xz -dc "${MPFR_TARBALL}" | "${TAR:-tar}" -xf -
 		gzip -dc "${MPC_TARBALL}" | "${TAR:-tar}" -xf -
 
 		# Rename GCC dir to the name we need
