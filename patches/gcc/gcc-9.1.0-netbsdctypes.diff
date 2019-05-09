@@ -1,12 +1,140 @@
+Fix NetBSD ctypes, from Nix:
+    https://github.com/NixOS/nixpkgs/tree/master/pkgs/development/compilers/gcc
 diff -uNr gcc-9.1.0.orig/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h
 --- gcc-9.1.0.orig/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h	2019-01-01 06:31:55.000000000 -0600
-+++ gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h	2019-05-08 16:44:07.429830428 -0500
-@@ -45,7 +45,7 @@
-     // on the mask type. Because of this, we don't use an enum.
-     typedef unsigned char      	mask;
++++ gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_base.h	2019-05-09 14:50:54.011379165 -0500
+@@ -38,40 +38,46 @@
+   /// @brief  Base class for ctype.
+   struct ctype_base
+   {
+-    // Non-standard typedefs.
+-    typedef const unsigned char*	__to_type;
  
--#ifndef _CTYPE_U
-+#ifndef _CTYPE_N
-     static const mask upper    	= _U;
-     static const mask lower 	= _L;
-     static const mask alpha 	= _U | _L;
+     // NB: Offsets into ctype<char>::_M_table force a particular size
+     // on the mask type. Because of this, we don't use an enum.
+-    typedef unsigned char      	mask;
+ 
+ #ifndef _CTYPE_U
+-    static const mask upper    	= _U;
+-    static const mask lower 	= _L;
+-    static const mask alpha 	= _U | _L;
+-    static const mask digit 	= _N;
+-    static const mask xdigit 	= _N | _X;
+-    static const mask space 	= _S;
+-    static const mask print 	= _P | _U | _L | _N | _B;
+-    static const mask graph 	= _P | _U | _L | _N;
+-    static const mask cntrl 	= _C;
+-    static const mask punct 	= _P;
+-    static const mask alnum 	= _U | _L | _N;
++    // Non-standard typedefs.
++    typedef const unsigned char*	__to_type;
++
++    typedef unsigned char	mask;
++
++    static const mask upper	= _U;
++    static const mask lower	= _L;
++    static const mask alpha	= _U | _L;
++    static const mask digit	= _N;
++    static const mask xdigit	= _N | _X;
++    static const mask space	= _S;
++    static const mask print	= _P | _U | _L | _N | _B;
++    static const mask graph	= _P | _U | _L | _N;
++    static const mask cntrl	= _C;
++    static const mask punct	= _P;
++    static const mask alnum	= _U | _L | _N;
+ #else
+-    static const mask upper    	= _CTYPE_U;
+-    static const mask lower 	= _CTYPE_L;
+-    static const mask alpha 	= _CTYPE_U | _CTYPE_L;
+-    static const mask digit 	= _CTYPE_N;
+-    static const mask xdigit 	= _CTYPE_N | _CTYPE_X;
+-    static const mask space 	= _CTYPE_S;
+-    static const mask print 	= _CTYPE_P | _CTYPE_U | _CTYPE_L | _CTYPE_N | _CTYPE_B;
+-    static const mask graph 	= _CTYPE_P | _CTYPE_U | _CTYPE_L | _CTYPE_N;
+-    static const mask cntrl 	= _CTYPE_C;
+-    static const mask punct 	= _CTYPE_P;
+-    static const mask alnum 	= _CTYPE_U | _CTYPE_L | _CTYPE_N;
++    typedef const unsigned short*	__to_type;
++
++    typedef unsigned short	mask;
++
++    static const mask upper	= _CTYPE_U;
++    static const mask lower	= _CTYPE_L;
++    static const mask alpha	= _CTYPE_A;
++    static const mask digit	= _CTYPE_D;
++    static const mask xdigit	= _CTYPE_X;
++    static const mask space	= _CTYPE_S;
++    static const mask print	= _CTYPE_R;
++    static const mask graph	= _CTYPE_G;
++    static const mask cntrl	= _CTYPE_C;
++    static const mask punct	= _CTYPE_P;
++    static const mask alnum	= _CTYPE_A | _CTYPE_D;
+ #endif
+ #if __cplusplus >= 201103L
+-    static const mask blank 	= space;
++    static const mask blank	= space;
+ #endif
+   };
+ 
+diff -uNr gcc-9.1.0.orig/libstdc++-v3/config/os/bsd/netbsd/ctype_configure_char.cc gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_configure_char.cc
+--- gcc-9.1.0.orig/libstdc++-v3/config/os/bsd/netbsd/ctype_configure_char.cc	2019-01-01 06:31:55.000000000 -0600
++++ gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_configure_char.cc	2019-05-09 14:50:54.012379165 -0500
+@@ -38,11 +38,9 @@
+ 
+ // Information as gleaned from /usr/include/ctype.h
+ 
+-  extern "C" const u_int8_t _C_ctype_[];
+-
+   const ctype_base::mask*
+   ctype<char>::classic_table() throw()
+-  { return _C_ctype_ + 1; }
++  { return _C_ctype_tab_ + 1; }
+ 
+   ctype<char>::ctype(__c_locale, const mask* __table, bool __del,
+ 		     size_t __refs)
+@@ -69,14 +67,14 @@
+ 
+   char
+   ctype<char>::do_toupper(char __c) const
+-  { return ::toupper((int) __c); }
++  { return ::toupper((int)(unsigned char) __c); }
+ 
+   const char*
+   ctype<char>::do_toupper(char* __low, const char* __high) const
+   {
+     while (__low < __high)
+       {
+-	*__low = ::toupper((int) *__low);
++	*__low = ::toupper((int)(unsigned char) *__low);
+ 	++__low;
+       }
+     return __high;
+@@ -84,14 +82,14 @@
+ 
+   char
+   ctype<char>::do_tolower(char __c) const
+-  { return ::tolower((int) __c); }
++  { return ::tolower((int)(unsigned char) __c); }
+ 
+   const char*
+   ctype<char>::do_tolower(char* __low, const char* __high) const
+   {
+     while (__low < __high)
+       {
+-	*__low = ::tolower((int) *__low);
++	*__low = ::tolower((int)(unsigned char) *__low);
+ 	++__low;
+       }
+     return __high;
+diff -uNr gcc-9.1.0.orig/libstdc++-v3/config/os/bsd/netbsd/ctype_inline.h gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_inline.h
+--- gcc-9.1.0.orig/libstdc++-v3/config/os/bsd/netbsd/ctype_inline.h	2019-01-01 06:31:55.000000000 -0600
++++ gcc-9.1.0-netbsdctypes/libstdc++-v3/config/os/bsd/netbsd/ctype_inline.h	2019-05-09 14:50:54.029379165 -0500
+@@ -48,7 +48,7 @@
+   is(const char* __low, const char* __high, mask* __vec) const
+   {
+     while (__low < __high)
+-      *__vec++ = _M_table[*__low++];
++      *__vec++ = _M_table[(unsigned char)*__low++];
+     return __high;
+   }
+ 
